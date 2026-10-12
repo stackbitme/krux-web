@@ -17,8 +17,7 @@ const DECODE_MAX_SIDE = 1600;
 
 export class CameraFeed {
   constructor({ preview, onChange }) {
-    this.preview = preview; // <canvas> in the side panel
-    this.pctx = preview.getContext("2d");
+    this.views = []; // canvases showing the source, where a region can be drawn
     this.onChange = onChange || (() => {});
     this.kind = null; // "webcam" | "screen" | "image"
     this.stream = null;
@@ -36,7 +35,7 @@ export class CameraFeed {
     this.kctx = this.kruxCanvas.getContext("2d", { willReadFrequently: true });
     this.decCanvas = new OffscreenCanvas(16, 16);
     this.dctx = this.decCanvas.getContext("2d", { willReadFrequently: true });
-    this._bindRegion();
+    this.addView(preview);
     this._loop = this._loop.bind(this);
     requestAnimationFrame(this._loop);
   }
@@ -192,31 +191,45 @@ export class CameraFeed {
     this.onChange();
   }
 
-  // ---------------------------------------------------------- preview
+  // ---------------------------------------------------------- previews
 
-  _fit(sw, sh) {
-    const cw = this.preview.width, ch = this.preview.height;
-    const s = Math.min(cw / sw, ch / sh);
-    const w = sw * s, h = sh * s;
-    return { x: (cw - w) / 2, y: (ch - h) / 2, w, h };
+  // Any canvas can show the source and let the user draw the region on it
+  // (the small preview in the panel and the large region picker).
+  addView(canvas) {
+    const view = { canvas, ctx: canvas.getContext("2d"), fit: null, drag: null };
+    this.views.push(view);
+    this._bindRegion(view);
+    return view;
+  }
+
+  removeView(canvas) {
+    this.views = this.views.filter((v) => v.canvas !== canvas);
   }
 
   _drawPreview(src) {
-    const c = this.preview;
+    for (const view of this.views) this._drawView(view, src);
+  }
+
+  _drawView(view, src) {
+    const c = view.canvas;
+    if (!c.isConnected || !c.clientWidth) return;
     const dpr = window.devicePixelRatio || 1;
     const bw = Math.round(c.clientWidth * dpr), bh = Math.round(c.clientHeight * dpr);
     if (bw && bh && (c.width !== bw || c.height !== bh)) {
       c.width = bw;
       c.height = bh;
     }
-    const g = this.pctx;
+    const g = view.ctx;
     g.clearRect(0, 0, c.width, c.height);
     if (!src) return;
     const [el, sw, sh] = src;
-    const f = this._fit(sw, sh);
-    this._view = { ...f, sw, sh };
+    const s = Math.min(c.width / sw, c.height / sh);
+    const f = { w: sw * s, h: sh * s };
+    f.x = (c.width - f.w) / 2;
+    f.y = (c.height - f.h) / 2;
+    view.fit = f;
     g.drawImage(el, f.x, f.y, f.w, f.h);
-    const r = this._dragRect || this.region;
+    const r = view.drag || this.region;
     if (r) {
       const x = f.x + r.x * f.w, y = f.y + r.y * f.h, w = r.w * f.w, h = r.h * f.h;
       g.save();
@@ -232,31 +245,32 @@ export class CameraFeed {
     }
   }
 
-  _bindRegion() {
-    const c = this.preview;
+  _bindRegion(view) {
+    const c = view.canvas;
     let start = null;
     const toNorm = (e) => {
-      const v = this._view;
-      if (!v) return null;
+      const f = view.fit;
+      if (!f) return null;
       const rect = c.getBoundingClientRect();
-      const dpr = c.width / rect.width;
-      const px = (e.clientX - rect.left) * dpr, py = (e.clientY - rect.top) * dpr;
+      const k = c.width / rect.width;
+      const px = (e.clientX - rect.left) * k, py = (e.clientY - rect.top) * k;
       return {
-        x: Math.min(1, Math.max(0, (px - v.x) / v.w)),
-        y: Math.min(1, Math.max(0, (py - v.y) / v.h)),
+        x: Math.min(1, Math.max(0, (px - f.x) / f.w)),
+        y: Math.min(1, Math.max(0, (py - f.y) / f.h)),
       };
     };
     c.addEventListener("pointerdown", (e) => {
       if (!this.active) return;
       start = toNorm(e);
       if (!start) return;
+      e.preventDefault();
       c.setPointerCapture(e.pointerId);
-      this._dragRect = null;
+      view.drag = null;
     });
     c.addEventListener("pointermove", (e) => {
       if (!start) return;
       const p = toNorm(e);
-      this._dragRect = {
+      view.drag = {
         x: Math.min(start.x, p.x), y: Math.min(start.y, p.y),
         w: Math.abs(p.x - start.x), h: Math.abs(p.y - start.y),
       };
@@ -264,11 +278,11 @@ export class CameraFeed {
     const end = () => {
       if (!start) return;
       start = null;
-      const r = this._dragRect;
-      this._dragRect = null;
-      if (r && r.w > 0.02 && r.h > 0.02) {
+      const r = view.drag;
+      view.drag = null;
+      if (r && r.w > 0.01 && r.h > 0.01) {
         this.region = r;
-        this.onChange();
+        this.onChange("region");
       }
     };
     c.addEventListener("pointerup", end);

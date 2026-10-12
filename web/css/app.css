@@ -197,6 +197,7 @@ select {
   user-select: none;
   filter: drop-shadow(0 24px 22px rgba(0, 0, 0, 0.45));
 }
+.screen-bed { position: absolute; background: #000; border-radius: 4px; }
 .lcd {
   position: absolute;
   image-rendering: pixelated;
@@ -322,6 +323,32 @@ kbd {
   font-size: 11px; line-height: 1.4; background: var(--mat-deep);
   border: 1px solid var(--line); border-radius: var(--radius-s); white-space: pre-wrap;
 }
+
+/* --------------------------------------------------------- region picker */
+
+.picker {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 18px 22px;
+  background: rgba(14, 27, 24, 0.985);
+}
+.picker-head h2 { margin: 0; font-size: 26px; font-weight: 750; font-stretch: 72%; }
+.picker-head p { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
+.picker-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  cursor: crosshair;
+  touch-action: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--mat-deep);
+}
+.picker-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
 /* ---------------------------------------------------------------- misc */
 

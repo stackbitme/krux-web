@@ -252,6 +252,13 @@ function placeLCD(w, h) {
     el.style.width = w + "px";
     el.style.height = h + "px";
   }
+  // Black behind the screen opening of the device picture (it is a little
+  // larger than the LCD), like the black window of the desktop simulator.
+  const bed = $("#screen-bed"), pad = 14;
+  bed.style.left = Math.floor((W - w) / 2) - pad + "px";
+  bed.style.top = Math.floor((H - h) / 2) - pad + "px";
+  bed.style.width = w + 2 * pad + "px";
+  bed.style.height = h + 2 * pad + "px";
 }
 
 function fitStage() {
@@ -542,6 +549,7 @@ function updateCameraUI() {
   $("#cam-hint").hidden = !camera.active;
   $("#cam-actions").hidden = !camera.active;
   $("#cam-full").disabled = !camera.region;
+  if (!camera.active) closePicker();
   for (const b of document.querySelectorAll(".seg-btn")) b.setAttribute("aria-pressed", String(camera.kind === b.dataset.src));
   const q = camera.lastQR;
   $("#qr-note").textContent = q ? `Último QR lido: ${q.size} bytes, às ${new Date(q.at).toLocaleTimeString("pt-BR")}` : "";
@@ -552,7 +560,10 @@ for (const b of document.querySelectorAll(".seg-btn")) {
   b.addEventListener("click", async () => {
     try {
       if (b.dataset.src === "webcam") await camera.useWebcam();
-      else if (b.dataset.src === "screen") await camera.useScreen();
+      else if (b.dataset.src === "screen") {
+        await camera.useScreen();
+        openPicker();
+      }
       else $("#cam-file").click();
     } catch (err) {
       if (err && err.name === "NotAllowedError") toast("Permissão negada. Libere o acesso no navegador e tente de novo.", 4500);
@@ -567,6 +578,24 @@ $("#cam-file").addEventListener("change", async (e) => {
   if (f) await camera.useImage(f).catch(() => toast("Esse arquivo não é uma imagem que o navegador consiga abrir."));
 });
 $("#cam-full").addEventListener("click", () => camera.clearRegion());
+
+// Large region picker (a "snipping tool" over the captured image)
+const picker = $("#picker");
+function openPicker() {
+  if (!camera.active) return;
+  picker.hidden = false;
+  camera.addView($("#picker-canvas"));
+  $("#picker-done").focus();
+}
+function closePicker() {
+  if (picker.hidden) return;
+  picker.hidden = true;
+  camera.removeView($("#picker-canvas"));
+}
+$("#cam-pick").addEventListener("click", openPicker);
+$("#picker-done").addEventListener("click", closePicker);
+$("#picker-all").addEventListener("click", () => { camera.clearRegion(); closePicker(); });
+picker.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); closePicker(); } });
 $("#cam-stop").addEventListener("click", () => camera.stop());
 document.addEventListener("paste", async (e) => {
   if (app.dataset.view !== "sim") return;

@@ -54,6 +54,7 @@
       <!-- Device -->
       <div class="stage-wrap" id="stage-wrap" hidden>
         <div class="stage" id="stage">
+          <div class="screen-bed" id="screen-bed" aria-hidden="true"></div>
           <canvas class="lcd" id="lcd" width="320" height="480" tabindex="0" aria-label="Tela da Krux"></canvas>
           <img class="device" id="device-img" alt="" draggable="false">
           <div class="overlay" id="overlay" hidden>
@@ -84,8 +85,9 @@
           <canvas id="cam-preview"></canvas>
           <p class="cam-empty" id="cam-empty">Escolha uma fonte. Você também pode colar (Ctrl+V) ou arrastar uma imagem de QR para cá.</p>
         </div>
-        <p class="hint" id="cam-hint" hidden>Arraste sobre a imagem para a Krux ler só aquela parte.</p>
-        <div class="row" id="cam-actions" hidden>
+        <p class="hint" id="cam-hint" hidden>Marque o QR para a Krux ler só aquela parte: arraste sobre a prévia ou use "Selecionar área".</p>
+        <div class="row wrap" id="cam-actions" hidden>
+          <button class="btn small" type="button" id="cam-pick">Selecionar área</button>
           <button class="btn small" type="button" id="cam-full">Usar a imagem toda</button>
           <button class="btn small" type="button" id="cam-stop">Parar</button>
         </div>
@@ -141,6 +143,18 @@
       </section>
     </aside>
   </main>
+
+  <div class="picker" id="picker" role="dialog" aria-modal="true" aria-labelledby="picker-title" hidden>
+    <div class="picker-head">
+      <h2 id="picker-title">Marque o QR code</h2>
+      <p>Arraste um retângulo em volta do QR. A Krux vai ler só essa parte. Dá para refazer quantas vezes quiser.</p>
+    </div>
+    <canvas class="picker-canvas" id="picker-canvas"></canvas>
+    <div class="picker-actions">
+      <button class="btn" type="button" id="picker-all">Usar a imagem toda</button>
+      <button class="btn primary" type="button" id="picker-done">Pronto</button>
+    </div>
+  </div>
 
   <div class="blocked" id="blocked" hidden>
     <h1>Abra pelo servidor local</h1>
