@@ -1,0 +1,11 @@
+{
+  "versions": [
+    {
+      "tag": "v26.09.0",
+      "devices": [
+        "maixpy_amigo"
+      ]
+    }
+  ],
+  "default": "v26.09.0"
+}

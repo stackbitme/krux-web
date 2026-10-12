@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador Krux</title>
+<meta name="description" content="A Krux rodando no navegador, para estudar e apresentar.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<!-- Makes the page cross-origin isolated on hosts that can't send COOP/COEP headers -->
+<script src="coi-serviceworker.js"></script>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="app" id="app" data-view="launcher">
+
+  <header class="bar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h4v8.5L15.5 2H20l-7 9 7.5 11H16l-5.6-8.4L9 15.3V22H5z"/></svg>
+      <span class="brand-name">Simulador Krux</span>
+      <span class="brand-session" id="session-label"></span>
+    </div>
+    <nav class="bar-actions" aria-label="Sessão">
+      <button class="btn ghost" id="btn-shot" type="button" title="Baixar a tela atual em PNG">Capturar tela</button>
+      <button class="btn ghost" id="btn-present" type="button" title="Esconde os painéis e aumenta o aparelho (Esc para sair)">Apresentar</button>
+      <button class="btn ghost" id="btn-change" type="button">Trocar versão</button>
+    </nav>
+  </header>
+
+  <main class="workspace">
+    <section class="mat" id="mat" aria-label="Aparelho">
+      <div class="ruler ruler-x" aria-hidden="true"></div>
+      <div class="ruler ruler-y" aria-hidden="true"></div>
+
+      <!-- Launcher -->
+      <form class="launcher" id="launcher" autocomplete="off">
+        <h1>Simulador Krux</h1>
+        <p class="lead">A Krux de verdade, rodando no navegador, para estudar e apresentar.</p>
+        <label class="field">
+          <span>Versão</span>
+          <select id="sel-version" required></select>
+        </label>
+        <label class="field">
+          <span>Dispositivo</span>
+          <select id="sel-device" required></select>
+        </label>
+        <label class="field">
+          <span>Idioma da Krux</span>
+          <select id="sel-lang"></select>
+        </label>
+        <button class="btn primary big" type="submit" id="btn-start">Ligar</button>
+        <p class="fine">O cartão SD e as configurações ficam salvos neste navegador. Nada sai do seu computador.</p>
+      </form>
+
+      <!-- Device -->
+      <div class="stage-wrap" id="stage-wrap" hidden>
+        <div class="stage" id="stage">
+          <canvas class="lcd" id="lcd" width="320" height="480" tabindex="0" aria-label="Tela da Krux"></canvas>
+          <img class="device" id="device-img" alt="" draggable="false">
+          <div class="overlay" id="overlay" hidden>
+            <p class="overlay-text" id="overlay-text"></p>
+            <pre class="overlay-detail" id="overlay-detail" hidden></pre>
+            <button class="btn primary" type="button" id="overlay-btn" hidden></button>
+          </div>
+        </div>
+      </div>
+      <p class="keys-hint" id="keys-hint" hidden>Clique na tela para tocar. Teclado: Enter, ↓ e ↑ fazem as vezes dos botões.</p>
+      <button class="btn present-exit" id="btn-present-exit" type="button">Sair da apresentação</button>
+    </section>
+
+    <aside class="panel" id="panel" hidden>
+
+      <section class="block" id="cam-block">
+        <div class="block-head">
+          <h2>Câmera</h2>
+          <span class="status" id="cam-status">desligada na Krux</span>
+        </div>
+        <div class="seg" role="group" aria-label="Fonte da câmera">
+          <button class="btn seg-btn" type="button" data-src="webcam">Webcam</button>
+          <button class="btn seg-btn" type="button" data-src="screen">Tela ou janela</button>
+          <button class="btn seg-btn" type="button" data-src="image">Imagem</button>
+        </div>
+        <input type="file" id="cam-file" accept="image/*" hidden>
+        <div class="cam-preview" id="cam-preview-box">
+          <canvas id="cam-preview"></canvas>
+          <p class="cam-empty" id="cam-empty">Escolha uma fonte. Você também pode colar (Ctrl+V) ou arrastar uma imagem de QR para cá.</p>
+        </div>
+        <p class="hint" id="cam-hint" hidden>Arraste sobre a imagem para a Krux ler só aquela parte.</p>
+        <div class="row" id="cam-actions" hidden>
+          <button class="btn small" type="button" id="cam-full">Usar a imagem toda</button>
+          <button class="btn small" type="button" id="cam-stop">Parar</button>
+        </div>
+        <p class="hint qr-note" id="qr-note" aria-live="polite"></p>
+      </section>
+
+      <section class="block" id="sd-block">
+        <div class="block-head">
+          <h2>Cartão SD</h2>
+          <span class="status" id="sd-status"></span>
+        </div>
+        <ul class="files" id="sd-list"></ul>
+        <div class="dropzone" id="sd-drop">Solte arquivos aqui para gravar no cartão</div>
+        <div class="row wrap">
+          <button class="btn small" type="button" id="sd-add">Adicionar arquivos</button>
+          <button class="btn small" type="button" id="sd-zip">Baixar .zip</button>
+          <button class="btn small" type="button" id="sd-import">Importar .zip</button>
+        </div>
+        <div class="row wrap">
+          <button class="btn small" type="button" id="sd-folder" hidden>Usar uma pasta do computador</button>
+          <button class="btn small danger" type="button" id="sd-clear">Esvaziar cartão</button>
+        </div>
+        <p class="hint" id="sd-folder-note" hidden></p>
+        <input type="file" id="sd-file" multiple hidden>
+        <input type="file" id="sd-zip-file" accept=".zip,application/zip" hidden>
+      </section>
+
+      <section class="block" id="btn-block">
+        <div class="block-head">
+          <h2>Botões</h2>
+        </div>
+        <div class="hw-buttons">
+          <button class="btn hw" type="button" data-key="ENTER">Enter <kbd>Enter</kbd></button>
+          <button class="btn hw" type="button" data-key="DOWN">Próximo <kbd>↓</kbd></button>
+          <button class="btn hw" type="button" data-key="UP">Anterior <kbd>↑</kbd></button>
+        </div>
+      </section>
+
+      <section class="block" id="session-block">
+        <div class="block-head">
+          <h2>Sessão</h2>
+        </div>
+        <div class="row wrap">
+          <button class="btn small" type="button" id="btn-restart">Reiniciar a Krux</button>
+          <button class="btn small" type="button" id="btn-link">Copiar link desta configuração</button>
+          <button class="btn small danger" type="button" id="btn-flash">Apagar memória interna</button>
+        </div>
+        <p class="hint">A memória interna guarda configurações, PIN e o aceite do aviso inicial deste dispositivo.</p>
+        <details class="log">
+          <summary>Registro da Krux</summary>
+          <pre id="log"></pre>
+        </details>
+      </section>
+    </aside>
+  </main>
+
+  <div class="blocked" id="blocked" hidden>
+    <h1>Abra pelo servidor local</h1>
+    <p>O simulador precisa de um recurso do navegador (memória compartilhada) que não funciona abrindo o arquivo direto.</p>
+    <p>Na pasta do projeto, rode <code>python3 serve.py</code> e abra <a href="http://localhost:8000">http://localhost:8000</a>.</p>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

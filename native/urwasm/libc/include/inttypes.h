@@ -1,0 +1,7 @@
+#include "kxlibc.h"
+#define PRIu32 "u"
+#define PRId32 "d"
+#define PRIx32 "x"
+#define PRIu64 "llu"
+#define PRIu8 "u"
+#define PRIu16 "u"

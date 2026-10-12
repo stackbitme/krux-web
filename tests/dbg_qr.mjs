@@ -1,0 +1,15 @@
+import fs from "node:fs";
+import { startSim } from "./node_sim.mjs";
+import { C } from "../web/js/shared.js";
+const out = process.argv[2]; fs.mkdirSync(out, { recursive: true });
+const sim = await startSim({ outDir: out, log: true });
+const st = () => `cam=${sim.ctrl.get(C.CAM_ON)} polls=${sim.ctrl.get(C.INPUT_POLLS)} frame=${sim.ctrl.get(C.FRAME_SEQ)}`;
+console.log("ready", await sim.ready(), st());
+await sim.tap(160, 100); console.log("tap1", await sim.ready(), st()); sim.shot("a1");
+await sim.tap(160, 100); console.log("tap2", await sim.ready(), st()); sim.shot("a2");
+await sim.tap(160, 60); console.log("tap Load", await sim.ready(), st()); sim.shot("a3");
+await sim.tap(160, 60); console.log("tap QR", await sim.ready(), st()); sim.shot("a4");
+await sim.sleep(500); console.log(st());
+sim.qr("before rebuild exercise history pipe know grape engine exit symbol west immune");
+console.log("qr sent", await sim.ready(), st()); sim.shot("a5");
+sim.stop(); process.exit(0);

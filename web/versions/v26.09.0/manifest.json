@@ -1,0 +1,30 @@
+{
+  "version": "v26.09.0",
+  "devices": [
+    {
+      "name": "Maix Amigo",
+      "window": [
+        480,
+        768
+      ],
+      "touch": true,
+      "id": "maixpy_amigo",
+      "image": "assets/maixpy_amigo.png"
+    }
+  ],
+  "default_device": "maixpy_amigo",
+  "languages": [
+    "en-US",
+    "de-DE",
+    "es-MX",
+    "fr-FR",
+    "ja-JP",
+    "ko-KR",
+    "nl-NL",
+    "pt-BR",
+    "ru-RU",
+    "tr-TR",
+    "vi-VN",
+    "zh-CN"
+  ]
+}
