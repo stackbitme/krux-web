@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import { loadPyodide } from "/home/claude/dl/pyo/p0277/package/pyodide.mjs";
+import { loadPyodide } from "../web/vendor/pyodide/pyodide.mjs";
 import { bootKrux } from "../web/js/kruxcore.js";
 import { createShared } from "../web/js/shared.js";
 const WEB = path.resolve(new URL("../web/", import.meta.url).pathname);
 const res = await bootKrux({
-  loadPyodide, pyodideURL: "/home/claude/dl/pyo/p0277/package/",
+  loadPyodide, pyodideURL: new URL("../web/vendor/pyodide/", import.meta.url).pathname,
   versionURL: path.join(WEB, "versions", "v26.09.0") + "/", runtimeURL: path.join(WEB, "runtime.zip"),
   shared: createShared(), device: "maixpy_amigo", post: () => {}, postFile: () => {},
   files: [{ path: "../cv.py", data: fs.readFileSync(new URL("./crypto_vectors.py", import.meta.url)) }],

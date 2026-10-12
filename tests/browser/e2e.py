@@ -94,10 +94,26 @@ with sync_playwright() as p:
 
     # reload: SD file and acknowledged disclaimer persist, link opens directly
     page.reload()
-    page.wait_for_function("document.querySelector('#overlay') && document.querySelector('#overlay').hidden === true", timeout=120000)
+    page.wait_for_function("window.__krux && window.__krux.lastFrame > 0 && document.querySelector('#overlay').hidden", timeout=120000)
     time.sleep(1.5)
     page.screenshot(path=OUT + "/10-after-reload.png")
     check("SD persists", "exemplo.txt" in page.inner_text("#sd-list"))
+    # disclaimer was acknowledged before: we are straight at the login menu
+    time.sleep(1.0)
+    tap(page, 160, 437)  # Shutdown
+    time.sleep(1.5)
+    page.screenshot(path=OUT + "/10a-shutdown-confirm.png")
+    tap(page, 240, 285)  # "Sim"
+    page.wait_for_function("!document.querySelector('#overlay').hidden && document.querySelector('#overlay-text').textContent.includes('desligada')", timeout=20000)
+    check("shutdown shows overlay", True, page.inner_text("#overlay-text"))
+    page.screenshot(path=OUT + "/10b-shutdown.png")
+    page.click("#overlay-btn")
+    page.wait_for_function("document.querySelector('#overlay').hidden", timeout=60000)
+    check("power on again", True)
+    time.sleep(1.5)
+    page.click("#btn-restart")
+    page.wait_for_function("document.querySelector('#overlay').hidden && window.__krux.lastFrame > 0", timeout=60000)
+    check("restart button", True)
 
     # mobile layout
     mob = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)

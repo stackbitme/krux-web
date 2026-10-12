@@ -1,9 +1,9 @@
 // Runs tests/ur_vectors.py inside Pyodide (Node) against ur.wasm + runtime/uUR.py
-import { loadPyodide } from "/home/claude/dl/pyo/p0277/package/pyodide.mjs";
+import { loadPyodide } from "../web/vendor/pyodide/pyodide.mjs";
 import { createUR } from "../web/js/urwasm.js";
 import fs from "node:fs";
 const [wasmPath, casesDir] = process.argv.slice(2);
-const py = await loadPyodide({ indexURL: "/home/claude/dl/pyo/p0277/package/" });
+const py = await loadPyodide({ indexURL: new URL("../web/vendor/pyodide/", import.meta.url).pathname });
 py.registerJsModule("_kxur", await createUR(fs.readFileSync(wasmPath)));
 py.FS.mkdirTree("/rt");
 py.FS.writeFile("/rt/uUR.py", fs.readFileSync(new URL("../web/runtime/uUR.py", import.meta.url)));

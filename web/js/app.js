@@ -193,6 +193,7 @@ async function start(version, device, lang) {
   $("#keys-hint").hidden = false;
   setupStage(info);
   await refreshSD();
+  state.applyLang = true; // only on this first boot: later reboots keep what Krux saved
   boot();
 }
 
@@ -285,6 +286,7 @@ function render() {
   }
 }
 requestAnimationFrame(render);
+window.__krux = state; // for debugging and tests
 
 // ------------------------------------------------------------------ overlay
 
@@ -363,7 +365,8 @@ async function boot() {
   camera.attach({ ctrl: state.ctrl, shared });
 
   let files = await storage.filesFor(state.device);
-  files = applyLanguage(files, state.lang);
+  if (state.applyLang) files = applyLanguage(files, state.lang);
+  state.applyLang = false;
 
   const worker = new Worker(new URL("./worker.js", import.meta.url), { type: "module" });
   state.worker = worker;

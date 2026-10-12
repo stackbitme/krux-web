@@ -6,9 +6,10 @@ import { createRequire } from "node:module";
 import { startSim } from "./node_sim.mjs";
 import { C } from "../web/js/shared.js";
 const require = createRequire(import.meta.url);
-const { PNG } = require("/home/claude/dl/npm/node_modules/pngjs");
-const zbar = require("/home/claude/dl/npm/node_modules/@undecaf/zbar-wasm");
-const QR = "/home/claude/krux-src/krux/simulator/sequences/qrcodes/";
+const { PNG } = require("pngjs");
+const zbar = require("@undecaf/zbar-wasm");
+const KRUX = process.env.KRUX_DIR || "../krux";
+const QR = KRUX + "/simulator/sequences/qrcodes/";
 const out = process.argv[2]; fs.mkdirSync(out, { recursive: true });
 
 async function qrFile(name) {
