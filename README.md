@@ -36,11 +36,14 @@ servidor.
   - **Tela ou janela**: o navegador pergunta o que compartilhar (tela inteira,
     uma janela ou uma aba, por exemplo a do Ian Coleman). Na primeira vez no Mac,
     libere "Gravação de Tela" para o navegador em Ajustes do Sistema;
-  - **Imagem**: um arquivo, um print colado (Ctrl+V / Cmd+V) ou uma imagem
-    arrastada para a área da câmera.
+  - **Imagem**: no campo logo abaixo, arraste uma imagem de QR (de uma pasta ou
+    de outra aba do navegador), cole com Ctrl+V / Cmd+V ou use "Colar imagem" e
+    "Escolher arquivo".
 
-  Arraste sobre a prévia para a Krux ler só uma parte da imagem (útil quando há
-  mais de um QR na tela). QR animados (PSBT, UR, BBQr) funcionam.
+  Para a Krux ler só uma parte da imagem (útil quando há mais de um QR na tela),
+  use "Selecionar área": abre a imagem grande para você desenhar um retângulo em
+  volta do QR. Ao compartilhar a tela, esse seletor abre sozinho. QR animados
+  (PSBT, UR, BBQr) funcionam.
 - **Cartão SD:** adicione arquivos (botão ou arrastando para a página), baixe,
   apague, exporte tudo em `.zip` ou importe um `.zip`. Funciona com a Krux ligada.
   No Chrome e no Edge dá para usar **uma pasta do computador** como cartão: o que

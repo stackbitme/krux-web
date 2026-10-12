@@ -538,6 +538,7 @@ for (const b of document.querySelectorAll(".hw")) {
 // ------------------------------------------------------------------- camera
 
 const camera = new CameraFeed({ preview: $("#cam-preview"), onChange: () => updateCameraUI() });
+window.__cam = camera; // for debugging and tests
 
 function updateCameraUI() {
   const wants = camera.kruxWants && state.running;
@@ -551,6 +552,7 @@ function updateCameraUI() {
   $("#cam-full").disabled = !camera.region;
   if (!camera.active) closePicker();
   for (const b of document.querySelectorAll(".seg-btn")) b.setAttribute("aria-pressed", String(camera.kind === b.dataset.src));
+  $("#img-drop").classList.toggle("active", camera.kind === "image");
   const q = camera.lastQR;
   $("#qr-note").textContent = q ? `Último QR lido: ${q.size} bytes, às ${new Date(q.at).toLocaleTimeString("pt-BR")}` : "";
 }
@@ -564,7 +566,6 @@ for (const b of document.querySelectorAll(".seg-btn")) {
         await camera.useScreen();
         openPicker();
       }
-      else $("#cam-file").click();
     } catch (err) {
       if (err && err.name === "NotAllowedError") toast("Permissão negada. Libere o acesso no navegador e tente de novo.", 4500);
       else if (err && err.name === "NotFoundError") toast("Nenhuma câmera encontrada.");
@@ -597,22 +598,77 @@ $("#picker-done").addEventListener("click", closePicker);
 $("#picker-all").addEventListener("click", () => { camera.clearRegion(); closePicker(); });
 picker.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); closePicker(); } });
 $("#cam-stop").addEventListener("click", () => camera.stop());
+// Images as the camera source: paste, drop (files or images dragged from
+// another page) or the clipboard button.
+async function useImageBlob(blob, how) {
+  try {
+    await camera.useImage(blob);
+    toast(how);
+  } catch {
+    toast("Esse arquivo não é uma imagem que o navegador consiga abrir.");
+  }
+}
+
+async function imageFromDrop(dt) {
+  const f = [...dt.files].find((x) => x.type.startsWith("image/"));
+  if (f) return f;
+  // An image dragged from another tab arrives as a URL
+  const url = (dt.getData("text/uri-list") || "").split("\n").find((l) => l && !l.startsWith("#"))
+    || (dt.getData("text/html").match(/<img[^>]+src="([^"]+)"/i) || [])[1];
+  if (!url) return null;
+  try {
+    const r = await fetch(url, { mode: "cors" });
+    const b = await r.blob();
+    return b.type.startsWith("image/") ? b : null;
+  } catch {
+    toast("Não consegui pegar essa imagem do outro site. Copie a imagem (botão direito, Copiar imagem) e cole aqui.", 6000);
+    return null;
+  }
+}
+
+function dropTarget(el, overEl = el) {
+  el.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); overEl.classList.add("over"); });
+  el.addEventListener("dragleave", () => overEl.classList.remove("over"));
+  el.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    overEl.classList.remove("over");
+    const img = await imageFromDrop(e.dataTransfer);
+    if (img) await useImageBlob(img, "Imagem carregada como fonte da câmera.");
+  });
+}
+dropTarget($("#img-drop"));
+dropTarget($("#cam-preview-box"), $("#img-drop"));
+dropTarget($("#picker-canvas"), picker);
+
 document.addEventListener("paste", async (e) => {
   if (app.dataset.view !== "sim") return;
+  if (e.target.closest && e.target.closest("input, textarea")) return;
   const item = [...(e.clipboardData?.items || [])].find((i) => i.type.startsWith("image/"));
-  if (!item) return;
+  if (!item) {
+    if ([...(e.clipboardData?.items || [])].length) toast("A área de transferência não tem uma imagem. Copie a imagem do QR (não o link) e cole de novo.", 5000);
+    return;
+  }
   e.preventDefault();
-  await camera.useImage(item.getAsFile());
-  toast("Imagem colada como fonte da câmera.");
+  await useImageBlob(item.getAsFile(), "Imagem colada como fonte da câmera.");
 });
-const camBox = $("#cam-preview-box");
-camBox.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); });
-camBox.addEventListener("drop", async (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  const f = [...e.dataTransfer.files].find((x) => x.type.startsWith("image/"));
-  if (f) await camera.useImage(f);
+
+$("#img-paste").addEventListener("click", async () => {
+  if (!navigator.clipboard || !navigator.clipboard.read) {
+    return toast("Este navegador não deixa o botão ler a área de transferência. Use Ctrl+V.", 5000);
+  }
+  try {
+    for (const item of await navigator.clipboard.read()) {
+      const type = item.types.find((t) => t.startsWith("image/"));
+      if (type) return useImageBlob(await item.getType(type), "Imagem colada como fonte da câmera.");
+    }
+    toast("A área de transferência não tem uma imagem. Copie a imagem do QR e tente de novo.", 5000);
+  } catch {
+    toast("O navegador não liberou a área de transferência. Use Ctrl+V.", 5000);
+  }
 });
+$("#img-choose").addEventListener("click", () => $("#cam-file").click());
+if (/Mac|iPhone|iPad/.test(navigator.platform)) $("#paste-key").textContent = "⌘V";
 
 // ------------------------------------------------------------------ SD card
 

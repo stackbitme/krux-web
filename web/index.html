@@ -78,12 +78,18 @@
         <div class="seg" role="group" aria-label="Fonte da câmera">
           <button class="btn seg-btn" type="button" data-src="webcam">Webcam</button>
           <button class="btn seg-btn" type="button" data-src="screen">Tela ou janela</button>
-          <button class="btn seg-btn" type="button" data-src="image">Imagem</button>
+        </div>
+        <div class="img-drop" id="img-drop" tabindex="0" role="group" aria-label="Imagem de QR">
+          <p>Arraste uma imagem de QR para cá ou cole com <kbd id="paste-key">Ctrl+V</kbd></p>
+          <div class="row">
+            <button class="btn small" type="button" id="img-paste">Colar imagem</button>
+            <button class="btn small" type="button" id="img-choose">Escolher arquivo</button>
+          </div>
         </div>
         <input type="file" id="cam-file" accept="image/*" hidden>
         <div class="cam-preview" id="cam-preview-box">
           <canvas id="cam-preview"></canvas>
-          <p class="cam-empty" id="cam-empty">Escolha uma fonte. Você também pode colar (Ctrl+V) ou arrastar uma imagem de QR para cá.</p>
+          <p class="cam-empty" id="cam-empty">A prévia do que a Krux vai ver aparece aqui.</p>
         </div>
         <p class="hint" id="cam-hint" hidden>Marque o QR para a Krux ler só aquela parte: arraste sobre a prévia ou use "Selecionar área".</p>
         <div class="row wrap" id="cam-actions" hidden>
@@ -147,7 +153,7 @@
   <div class="picker" id="picker" role="dialog" aria-modal="true" aria-labelledby="picker-title" hidden>
     <div class="picker-head">
       <h2 id="picker-title">Marque o QR code</h2>
-      <p>Arraste um retângulo em volta do QR. A Krux vai ler só essa parte. Dá para refazer quantas vezes quiser.</p>
+      <p>Arraste um retângulo em volta do QR. A Krux vai ler só essa parte. Dá para refazer quantas vezes quiser. Você também pode soltar ou colar outra imagem aqui.</p>
     </div>
     <canvas class="picker-canvas" id="picker-canvas"></canvas>
     <div class="picker-actions">
