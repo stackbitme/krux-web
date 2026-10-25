@@ -12,6 +12,20 @@ import { scanImageData } from "./vendor/zbar/zbar.mjs";
 import { C, CAM_W, CAM_H, QR_BYTES } from "./shared.js";
 
 const KRUX_FPS = 15;
+
+// OffscreenCanvas 2D needs iOS/Safari 16.4+; fall back to a detached canvas.
+function makeCanvas(w, h) {
+  if (typeof OffscreenCanvas !== "undefined") {
+    try {
+      const c = new OffscreenCanvas(w, h);
+      if (c.getContext("2d")) return new OffscreenCanvas(w, h);
+    } catch { /* fall through */ }
+  }
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  return c;
+}
 const DECODE_INTERVAL = 120; // ms between decode attempts
 const DECODE_MAX_SIDE = 1600;
 
@@ -31,9 +45,9 @@ export class CameraFeed {
     this.lastDecode = 0;
     this.decoding = false;
     this.lastQR = null;
-    this.kruxCanvas = new OffscreenCanvas(CAM_W, CAM_H);
+    this.kruxCanvas = makeCanvas(CAM_W, CAM_H);
     this.kctx = this.kruxCanvas.getContext("2d", { willReadFrequently: true });
-    this.decCanvas = new OffscreenCanvas(16, 16);
+    this.decCanvas = makeCanvas(16, 16);
     this.dctx = this.decCanvas.getContext("2d", { willReadFrequently: true });
     this.addView(preview);
     this._loop = this._loop.bind(this);

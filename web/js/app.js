@@ -216,47 +216,84 @@ const lcd = $("#lcd");
 const lctx = lcd.getContext("2d");
 let imageData = null;
 
-function setupStage(info) {
-  const [W, H] = info.window;
+// The stage is the device picture cropped to the device itself (the
+// simulator's pictures have wide transparent margins), with the LCD at the
+// centre of the picture, where the desktop simulator puts it.
+const STAGE_MARGIN = 18;
+
+function setStageBox(W, H, cx, cy) {
   const stage = $("#stage");
   stage.style.width = W + "px";
   stage.style.height = H + "px";
+  state.screenCenter = { x: cx, y: cy };
+  placeLCD(state.lcdW || 320, state.lcdH || 480);
+  fitStage();
+}
+
+function opaqueBox(img) {
+  const c = document.createElement("canvas");
+  c.width = img.naturalWidth;
+  c.height = img.naturalHeight;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  g.drawImage(img, 0, 0);
+  const d = g.getImageData(0, 0, c.width, c.height).data;
+  let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+  for (let y = 0; y < c.height; y++) {
+    for (let x = 0; x < c.width; x++) {
+      if (d[(y * c.width + x) * 4 + 3] > 24) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+  }
+  return x1 < 0 ? null : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+}
+
+function setupStage(info) {
+  const [W, H] = info.window;
+  setStageBox(W, H, W / 2, H / 2);
   const img = $("#device-img");
   if (info.image) {
     img.hidden = false;
-    img.src = `versions/${state.version}/${info.image}`;
     img.onload = () => {
-      img.style.left = (W - img.naturalWidth) / 2 + "px";
-      img.style.top = (H - img.naturalHeight) / 2 + "px";
+      const iw = img.naturalWidth, ih = img.naturalHeight;
+      let box = null;
+      try { box = opaqueBox(img); } catch { /* keep the full picture */ }
+      if (!box) box = { x: (iw - W) / 2, y: (ih - H) / 2, w: W, h: H };
+      const left = STAGE_MARGIN - box.x, top = STAGE_MARGIN - box.y;
+      img.style.left = left + "px";
+      img.style.top = top + "px";
+      setStageBox(box.w + 2 * STAGE_MARGIN, box.h + 2 * STAGE_MARGIN, left + iw / 2, top + ih / 2);
     };
+    img.src = `versions/${state.version}/${info.image}`;
   } else {
     img.hidden = true;
   }
-  placeLCD(320, 480);
-  fitStage();
 }
 
 function placeLCD(w, h) {
   state.lcdW = w;
   state.lcdH = h;
-  const stage = $("#stage");
-  const W = parseInt(stage.style.width), H = parseInt(stage.style.height);
+  const c = state.screenCenter || { x: 240, y: 384 };
   if (lcd.width !== w || lcd.height !== h) {
     lcd.width = w;
     lcd.height = h;
   }
   imageData = lctx.createImageData(w, h);
+  const left = Math.floor(c.x - w / 2), top = Math.floor(c.y - h / 2);
   for (const el of [lcd, $("#overlay")]) {
-    el.style.left = Math.floor((W - w) / 2) + "px";
-    el.style.top = Math.floor((H - h) / 2) + "px";
+    el.style.left = left + "px";
+    el.style.top = top + "px";
     el.style.width = w + "px";
     el.style.height = h + "px";
   }
   // Black behind the screen opening of the device picture (it is a little
   // larger than the LCD), like the black window of the desktop simulator.
   const bed = $("#screen-bed"), pad = 14;
-  bed.style.left = Math.floor((W - w) / 2) - pad + "px";
-  bed.style.top = Math.floor((H - h) / 2) - pad + "px";
+  bed.style.left = left - pad + "px";
+  bed.style.top = top - pad + "px";
   bed.style.width = w + 2 * pad + "px";
   bed.style.height = h + 2 * pad + "px";
 }
@@ -834,6 +871,16 @@ for (const zone of [mat, $("#sd-block")]) {
   });
 }
 
+// Screen capture does not exist on iPhone/iPad (nor on most phones)
+if (!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) {
+  const b = document.querySelector('.seg-btn[data-src="screen"]');
+  b.hidden = true;
+  b.parentElement.classList.add("single");
+}
+if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+  document.querySelector('.seg-btn[data-src="webcam"]').hidden = true;
+}
+
 // Real folder as the SD card (File System Access API: Chrome and Edge)
 if ("showDirectoryPicker" in window) {
   $("#sd-folder").hidden = false;
@@ -934,12 +981,16 @@ $("#btn-shot").addEventListener("click", () => {
 
 function enterPresent() {
   app.classList.add("present");
-  document.documentElement.requestFullscreen?.().catch(() => {});
+  const el = document.documentElement;
+  // iPhone Safari has no page fullscreen; "Add to Home Screen" gives the same
+  if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
   requestAnimationFrame(fitStage);
 }
 function exitPresent() {
   app.classList.remove("present");
   if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  else if (document.webkitFullscreenElement) document.webkitExitFullscreen?.();
   requestAnimationFrame(fitStage);
 }
 $("#btn-present").addEventListener("click", enterPresent);

@@ -9,6 +9,14 @@ Versão incluída: **Krux v26.09.0**, dispositivo **Maix Amigo**.
 
 ## Como abrir
 
+**Online (qualquer aparelho, inclusive iPhone e iPad):**
+https://stackbitme.github.io/krux-web/
+
+No iPhone e no iPad, abra no Safari e use **Compartilhar → Adicionar à Tela de
+Início**: o simulador vira um app em tela cheia, sem a barra do navegador.
+
+**No computador, sem internet:**
+
 Precisa do Python 3 instalado (só ele, sem pacotes extras). Funciona sem internet.
 
 | Sistema | Como abrir |
@@ -135,6 +143,18 @@ ambiente do simulador oficial instalado, e `npm install` dentro de `tests/`) ver
 `tests/browser/` tem testes no Chromium (Playwright): boot, leitura de QR por
 imagem, carteira, cartão SD, teclado, apresentação, celular, desligar e religar,
 webcam, captura de tela e seleção de região.
+
+## iPhone e iPad
+
+Funciona pelo Safari, no endereço online (precisa de HTTPS; não dá para abrir
+pelo IP do computador na rede local).
+
+- Toque, botões, cartão SD, câmera (traseira ou frontal) e imagem colada ou
+  escolhida funcionam.
+- "Tela ou janela" e "Usar uma pasta do computador" não existem no iOS e ficam
+  escondidos.
+- O Python no navegador usa algumas centenas de MB de memória: num iPhone antigo
+  o Safari pode recarregar a página se faltar memória.
 
 ## Limitações conhecidas
 

@@ -48,7 +48,7 @@ with sync_playwright() as p:
     page.wait_for_function("document.querySelector('#overlay').hidden === true", timeout=120000)
     check("boot", True, "%.1fs" % (time.time() - t0))
     check("url has config", "v=v26.09.0" in page.url and "device=amigo" in page.url, page.url)
-    time.sleep(1.5)
+    time.sleep(2.5)  # past the splash screen (taps there are ignored, like on the device)
     page.screenshot(path=OUT + "/02-disclaimer.png")
 
     # disclaimer -> "I understand"

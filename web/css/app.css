@@ -42,12 +42,15 @@
 html, body { height: 100%; }
 body {
   margin: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
   background: var(--mat-deep);
   color: var(--ink);
   font: 400 15px/1.5 var(--font);
   -webkit-font-smoothing: antialiased;
 }
 button, select, input { font: inherit; color: inherit; }
+button { touch-action: manipulation; }
 :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 [hidden] { display: none !important; }
 
@@ -61,6 +64,9 @@ button, select, input { font: inherit; color: inherit; }
 /* ---------------------------------------------------------------- bar */
 
 .bar {
+  padding-top: max(10px, env(safe-area-inset-top)) !important;
+  padding-left: max(20px, env(safe-area-inset-left)) !important;
+  padding-right: max(20px, env(safe-area-inset-right)) !important;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -183,6 +189,9 @@ select {
 
 .stage-wrap { position: relative; flex: 1; width: 100%; min-height: 0; }
 .stage {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
   position: absolute;
   left: 50%;
   top: 50%;
@@ -242,6 +251,7 @@ select {
 /* ---------------------------------------------------------------- panel */
 
 .panel {
+  padding-bottom: max(28px, env(safe-area-inset-bottom)) !important;
   background: var(--panel);
   border-left: 1px solid var(--line);
   overflow-y: auto;
@@ -258,6 +268,7 @@ select {
 .row.wrap { flex-wrap: wrap; }
 
 .seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+.seg.single { grid-template-columns: 1fr; }
 .seg-btn { padding: 7px 4px; font-size: 14px; }
 .seg-btn[aria-pressed="true"] { background: var(--ink); color: var(--mat-deep); border-color: var(--ink); }
 
@@ -397,6 +408,15 @@ code { font-size: 0.92em; background: var(--mat-deep); padding: 1px 5px; border-
   background: rgba(22, 42, 37, 0.8); color: var(--muted); font-size: 13px;
 }
 
+/* Touch-only devices: no keyboard hints */
+@media (hover: none) and (pointer: coarse) {
+  .keys-hint, .hw kbd { display: none; }
+}
+.app.present .mat {
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
 /* -------------------------------------------------------------- mobile */
 
 @media (max-width: 860px) {
@@ -410,6 +430,14 @@ code { font-size: 0.92em; background: var(--mat-deep); padding: 1px 5px; border-
   .ruler-y { width: 18px; }
   .bar { padding: 8px 16px; flex-wrap: wrap; }
   .brand-session { display: none; }
+}
+@media (max-width: 520px) {
+  .brand-name { display: none; }
+  .bar { padding-bottom: 6px; }
+  .bar-actions { gap: 0; flex-wrap: nowrap; }
+  .bar-actions .btn { padding: 6px 8px; font-size: 14px; }
+  .mat { padding: 26px 8px 8px 26px; height: calc(100dvh - 52px); }
+  .keys-hint { display: none !important; }
 }
 @media (max-width: 420px) {
   .launcher { padding: 22px 18px 18px; }
