@@ -17,11 +17,14 @@ def lit(page):
     return page.evaluate("""() => { const d = document.querySelector('#lcd').getContext('2d').getImageData(40,120,240,240).data;
       let n=0; for (let i=0;i<d.length;i+=4) if (d[i]+d[i+1]+d[i+2] > 60) n++; return n; }""")
 
+SKIP_NOTICE = "try { sessionStorage.setItem('krux-web:notice', '1') } catch (e) {}"
+
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
                                 "--auto-select-desktop-capture-source=Entire screen", "--auto-accept-this-tab-capture",
                                 "--enable-usermedia-screen-capturing"])
     ctx = b.new_context(viewport={"width": 1280, "height": 860})
+    ctx.add_init_script(SKIP_NOTICE)
     page = ctx.new_page()
     logs = []
     page.on("console", lambda m: logs.append(m.text))

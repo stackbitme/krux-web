@@ -3,6 +3,7 @@
 
     python3 serve.py            # http://localhost:8000
     python3 serve.py 9000       # another port
+    python3 serve.py --no-browser   # don't open the browser
 
 Serves the `web/` folder with the two headers browsers require for shared
 memory (Cross-Origin-Opener-Policy / Cross-Origin-Embedder-Policy). Only
@@ -51,7 +52,8 @@ class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 
 def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+    args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    port = int(args[0]) if args else 8000
     for p in range(port, port + 20):
         try:
             httpd = Server(("127.0.0.1", p), Handler)
@@ -61,7 +63,7 @@ def main():
     else:
         sys.exit("No free port between %d and %d" % (port, port + 19))
     url = "http://localhost:%d/" % httpd.server_address[1]
-    print("Simulador Krux em %s  (Ctrl+C para encerrar)" % url)
+    print("Krux Simulator at %s  (Ctrl+C to stop)" % url)
     if "--no-browser" not in sys.argv:
         threading.Timer(0.6, lambda: webbrowser.open(url)).start()
     try:

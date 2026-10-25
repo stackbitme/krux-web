@@ -1,4 +1,5 @@
-// Simulador Krux: page controller (launcher, device, panels).
+// Krux Simulator: page controller (launcher, device, panels).
+import { t, uiLang, locale, setUILang, onUILang, applyStatic, UI_LANGS } from "./i18n.js";
 import { createShared, Ctrl, C, KEY, INBOX_BYTES } from "./shared.js";
 import * as storage from "./storage.js";
 import { CameraFeed } from "./camera.js";
@@ -13,6 +14,8 @@ const LANG_NAMES = {
   "ru-RU": "Русский", "tr-TR": "Türkçe", "vi-VN": "Tiếng Việt", "zh-CN": "中文",
 };
 const KEEP_LANG = "";
+const DEFAULT_KRUX_LANG = "en-US";
+const PASTE_KEY = /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘V" : "Ctrl+V";
 
 const state = {
   index: null,
@@ -51,8 +54,9 @@ function toast(text, ms = 2600) {
 
 function fmtSize(n) {
   if (n < 1024) return n + " B";
-  if (n < 1024 * 1024) return (n / 1024).toFixed(n < 10240 ? 1 : 0).replace(".", ",") + " KB";
-  return (n / 1024 / 1024).toFixed(1).replace(".", ",") + " MB";
+  const dec = (x, d) => x.toLocaleString(locale(), { maximumFractionDigits: d, minimumFractionDigits: d });
+  if (n < 1024 * 1024) return dec(n / 1024, n < 10240 ? 1 : 0) + " KB";
+  return dec(n / 1024 / 1024, 1) + " MB";
 }
 
 function download(name, blob) {
@@ -67,22 +71,24 @@ function download(name, blob) {
 
 async function getJSON(url) {
   const r = await fetch(url, { cache: "no-cache" });
-  if (!r.ok) throw new Error(`${r.status} ao baixar ${url}`);
+  if (!r.ok) throw new Error(t("boot.fetchFail", { status: r.status, url }));
   return r.json();
 }
 
 // Two-step confirmation for destructive buttons (no blocking dialogs).
-function armed(btn, label, action) {
-  const original = btn.textContent;
+// The button keeps its data-i18n key; the confirmation label is a key too.
+function armed(btn, labelKey, action) {
+  const reset = () => { btn.classList.remove("armed"); btn.textContent = t(btn.dataset.i18n); };
+  let timer = 0;
   btn.addEventListener("click", async () => {
     if (!btn.classList.contains("armed")) {
       btn.classList.add("armed");
-      btn.textContent = label;
-      setTimeout(() => { btn.classList.remove("armed"); btn.textContent = original; }, 3500);
+      btn.textContent = t(labelKey);
+      timer = setTimeout(reset, 3500);
       return;
     }
-    btn.classList.remove("armed");
-    btn.textContent = original;
+    clearTimeout(timer);
+    reset();
     await action();
   });
 }
@@ -96,7 +102,7 @@ async function loadIndex() {
   for (const v of state.index.versions) {
     const o = document.createElement("option");
     o.value = v.tag;
-    o.textContent = v.tag === state.index.default ? `${v.tag} (mais recente)` : v.tag;
+    o.textContent = v.tag === state.index.default ? t("launcher.latest", { v: v.tag }) : v.tag;
     sel.append(o);
   }
 }
@@ -115,7 +121,8 @@ async function loadManifest(tag) {
   lsel.innerHTML = "";
   const keep = document.createElement("option");
   keep.value = KEEP_LANG;
-  keep.textContent = "Manter o que estiver salvo";
+  keep.dataset.i18n = "launcher.keepLang";
+  keep.textContent = t("launcher.keepLang");
   lsel.append(keep);
   for (const code of state.manifest.languages) {
     const o = document.createElement("option");
@@ -148,19 +155,20 @@ async function initLauncher() {
   const langs = state.manifest.languages;
   const matchLang = (l) => l && langs.find((x) => x.toLowerCase() === l.toLowerCase() || x.slice(0, 2) === l.toLowerCase());
   const saved = remember.get("lang");
-  $("#sel-lang").value = matchLang(wantL) || (saved !== null ? saved : "pt-BR");
+  $("#sel-lang").value = matchLang(wantL) || (saved !== null ? saved : DEFAULT_KRUX_LANG);
 
   $("#sel-version").addEventListener("change", async (e) => {
     const dev = $("#sel-device").value, lang = $("#sel-lang").value;
     await loadManifest(e.target.value);
     if (deviceInfo(dev)) $("#sel-device").value = dev;
-    $("#sel-lang").value = langs.includes(lang) || lang === KEEP_LANG ? lang : "pt-BR";
+    $("#sel-lang").value = state.manifest.languages.includes(lang) || lang === KEEP_LANG ? lang : DEFAULT_KRUX_LANG;
   });
   $("#launcher").addEventListener("submit", (e) => {
     e.preventDefault();
     start($("#sel-version").value, $("#sel-device").value, $("#sel-lang").value);
   });
 
+  await noticeAccepted;
   if (wantV || wantD) start($("#sel-version").value, $("#sel-device").value, $("#sel-lang").value);
 }
 
@@ -170,6 +178,7 @@ function configURL() {
   u.searchParams.set("v", state.version);
   u.searchParams.set("device", state.device.replace("maixpy_", ""));
   if (state.lang) u.searchParams.set("lang", state.lang);
+  if (uiLang() !== "en") u.searchParams.set("ui", uiLang());
   return u.toString();
 }
 
@@ -184,9 +193,8 @@ async function start(version, device, lang) {
   history.replaceState(null, "", configURL());
 
   const info = deviceInfo(device);
-  $("#session-label").textContent = `Krux ${version} no ${info.name}`;
-  document.title = `Krux ${version}, ${info.name}`;
   app.dataset.view = "sim";
+  sessionTexts();
   $("#launcher").hidden = true;
   $("#stage-wrap").hidden = false;
   $("#panel").hidden = false;
@@ -205,9 +213,20 @@ function backToLauncher() {
   $("#stage-wrap").hidden = true;
   $("#panel").hidden = true;
   $("#keys-hint").hidden = true;
-  $("#session-label").textContent = "";
   history.replaceState(null, "", location.pathname);
-  document.title = "Simulador Krux";
+  sessionTexts();
+}
+
+function sessionTexts() {
+  const sim = app.dataset.view === "sim";
+  const info = state.manifest && state.device && deviceInfo(state.device);
+  if (sim && info) {
+    $("#session-label").textContent = t("session.label", { v: state.version, device: info.name });
+    document.title = t("session.docTitle", { v: state.version, device: info.name });
+  } else {
+    $("#session-label").textContent = "";
+    document.title = t("title");
+  }
 }
 
 // -------------------------------------------------------------------- stage
@@ -334,11 +353,13 @@ window.__krux = state; // for debugging and tests
 
 // ------------------------------------------------------------------ overlay
 
-function showOverlay(text, { spinner = false, detail = null, button = null, action = null } = {}) {
+// text and button are i18n keys, so the overlay can be re-translated
+function showOverlay(textKey, opts = {}) {
+  const { spinner = false, detail = null, button = null, action = null } = opts;
+  state.overlay = { textKey, opts };
   const o = $("#overlay");
   o.hidden = false;
-  const t = $("#overlay-text");
-  t.textContent = text;
+  $("#overlay-text").textContent = t(textKey);
   o.querySelector(".spinner")?.remove();
   if (spinner) {
     const s = document.createElement("div");
@@ -350,10 +371,11 @@ function showOverlay(text, { spinner = false, detail = null, button = null, acti
   d.textContent = detail || "";
   const b = $("#overlay-btn");
   b.hidden = !button;
-  b.textContent = button || "";
+  b.textContent = button ? t(button) : "";
   b.onclick = action;
 }
 function hideOverlay() {
+  state.overlay = null;
   $("#overlay").hidden = true;
 }
 
@@ -390,7 +412,7 @@ function applyLanguage(files, lang) {
   return out;
 }
 
-const STEPS = { python: "Carregando o Python…", krux: "Carregando a Krux…", boot: "Ligando…" };
+const STEPS = { python: "boot.python", krux: "boot.krux", boot: "boot.boot" };
 
 async function boot() {
   stopWorker();
@@ -427,9 +449,9 @@ async function boot() {
 function showCrash(detail) {
   state.crashed = true;
   state.running = false;
-  showOverlay("A Krux parou com um erro.", {
+  showOverlay("boot.crash", {
     detail,
-    button: "Reiniciar",
+    button: "boot.restart",
     action: boot,
   });
 }
@@ -485,7 +507,7 @@ async function onWorkerMessage(worker, m) {
       if (state.pendingReboot) {
         boot();
       } else {
-        showOverlay("A Krux foi desligada.", { button: "Ligar", action: boot });
+        showOverlay("boot.off", { button: "boot.on", action: boot });
       }
       break;
   }
@@ -580,7 +602,7 @@ window.__cam = camera; // for debugging and tests
 function updateCameraUI() {
   const wants = camera.kruxWants && state.running;
   const status = $("#cam-status");
-  status.textContent = wants ? (camera.active ? "lendo" : "a Krux está esperando") : "desligada na Krux";
+  status.textContent = t(wants ? (camera.active ? "cam.status.reading" : "cam.status.waiting") : "cam.status.off");
   status.classList.toggle("live", wants);
   $("#cam-preview-box").classList.toggle("waiting", wants && !camera.active);
   $("#cam-empty").hidden = camera.active;
@@ -591,7 +613,7 @@ function updateCameraUI() {
   for (const b of document.querySelectorAll(".seg-btn")) b.setAttribute("aria-pressed", String(camera.kind === b.dataset.src));
   $("#img-drop").classList.toggle("active", camera.kind === "image");
   const q = camera.lastQR;
-  $("#qr-note").textContent = q ? `Último QR lido: ${q.size} bytes, às ${new Date(q.at).toLocaleTimeString("pt-BR")}` : "";
+  $("#qr-note").textContent = q ? t("cam.lastQR", { n: q.size, time: new Date(q.at).toLocaleTimeString(locale()) }) : "";
 }
 setInterval(updateCameraUI, 1000);
 
@@ -604,16 +626,16 @@ for (const b of document.querySelectorAll(".seg-btn")) {
         openPicker();
       }
     } catch (err) {
-      if (err && err.name === "NotAllowedError") toast("Permissão negada. Libere o acesso no navegador e tente de novo.", 4500);
-      else if (err && err.name === "NotFoundError") toast("Nenhuma câmera encontrada.");
-      else toast("Não deu para abrir essa fonte: " + (err && err.message ? err.message : err), 4500);
+      if (err && err.name === "NotAllowedError") toast(t("cam.denied"), 4500);
+      else if (err && err.name === "NotFoundError") toast(t("cam.notFound"));
+      else toast(t("cam.cantOpen", { err: err && err.message ? err.message : err }), 4500);
     }
   });
 }
 $("#cam-file").addEventListener("change", async (e) => {
   const f = e.target.files[0];
   e.target.value = "";
-  if (f) await camera.useImage(f).catch(() => toast("Esse arquivo não é uma imagem que o navegador consiga abrir."));
+  if (f) await camera.useImage(f).catch(() => toast(t("cam.notImage")));
 });
 $("#cam-full").addEventListener("click", () => camera.clearRegion());
 
@@ -640,9 +662,9 @@ $("#cam-stop").addEventListener("click", () => camera.stop());
 async function useImageBlob(blob, how) {
   try {
     await camera.useImage(blob);
-    toast(how);
+    toast(t(how));
   } catch {
-    toast("Esse arquivo não é uma imagem que o navegador consiga abrir.");
+    toast(t("cam.notImage"));
   }
 }
 
@@ -658,7 +680,7 @@ async function imageFromDrop(dt) {
     const b = await r.blob();
     return b.type.startsWith("image/") ? b : null;
   } catch {
-    toast("Não consegui pegar essa imagem do outro site. Copie a imagem (botão direito, Copiar imagem) e cole aqui.", 6000);
+    toast(t("cam.dragFail"), 6000);
     return null;
   }
 }
@@ -671,7 +693,7 @@ function dropTarget(el, overEl = el) {
     e.stopPropagation();
     overEl.classList.remove("over");
     const img = await imageFromDrop(e.dataTransfer);
-    if (img) await useImageBlob(img, "Imagem carregada como fonte da câmera.");
+    if (img) await useImageBlob(img, "cam.imageLoaded");
   });
 }
 dropTarget($("#img-drop"));
@@ -683,29 +705,32 @@ document.addEventListener("paste", async (e) => {
   if (e.target.closest && e.target.closest("input, textarea")) return;
   const item = [...(e.clipboardData?.items || [])].find((i) => i.type.startsWith("image/"));
   if (!item) {
-    if ([...(e.clipboardData?.items || [])].length) toast("A área de transferência não tem uma imagem. Copie a imagem do QR (não o link) e cole de novo.", 5000);
+    if ([...(e.clipboardData?.items || [])].length) toast(t("cam.clipNoImage"), 5000);
     return;
   }
   e.preventDefault();
-  await useImageBlob(item.getAsFile(), "Imagem colada como fonte da câmera.");
+  await useImageBlob(item.getAsFile(), "cam.imagePasted");
 });
 
 $("#img-paste").addEventListener("click", async () => {
   if (!navigator.clipboard || !navigator.clipboard.read) {
-    return toast("Este navegador não deixa o botão ler a área de transferência. Use Ctrl+V.", 5000);
+    return toast(t("cam.clipUnsupported", { key: PASTE_KEY }), 5000);
   }
   try {
     for (const item of await navigator.clipboard.read()) {
       const type = item.types.find((t) => t.startsWith("image/"));
-      if (type) return useImageBlob(await item.getType(type), "Imagem colada como fonte da câmera.");
+      if (type) return useImageBlob(await item.getType(type), "cam.imagePasted");
     }
-    toast("A área de transferência não tem uma imagem. Copie a imagem do QR e tente de novo.", 5000);
+    toast(t("cam.clipNoImageBtn"), 5000);
   } catch {
-    toast("O navegador não liberou a área de transferência. Use Ctrl+V.", 5000);
+    toast(t("cam.clipDenied", { key: PASTE_KEY }), 5000);
   }
 });
 $("#img-choose").addEventListener("click", () => $("#cam-file").click());
-if (/Mac|iPhone|iPad/.test(navigator.platform)) $("#paste-key").textContent = "⌘V";
+function dropText() {
+  const esc = (x) => x.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+  $("#img-drop-text").innerHTML = esc(t("cam.drop")).replace("{key}", `<kbd>${PASTE_KEY}</kbd>`);
+}
 
 // ------------------------------------------------------------------ SD card
 
@@ -716,7 +741,7 @@ async function refreshSD() {
   if (!files.length) {
     const li = document.createElement("li");
     li.className = "empty";
-    li.textContent = "Cartão vazio. Adicione uma PSBT, um backup ou qualquer arquivo para a Krux ler.";
+    li.textContent = t("sd.empty");
     ul.append(li);
   }
   let total = 0;
@@ -734,17 +759,18 @@ async function refreshSD() {
     const dl = document.createElement("button");
     dl.className = "btn act";
     dl.type = "button";
-    dl.textContent = "Baixar";
+    dl.textContent = t("sd.download");
     dl.onclick = () => download(f.name.split("/").pop(), new Blob([f.data]));
     const rm = document.createElement("button");
     rm.className = "btn act danger";
     rm.type = "button";
-    rm.textContent = "Apagar";
+    rm.textContent = t("sd.delete");
     rm.onclick = () => removeSDFile(f.name);
     li.append(name, dl, rm);
     ul.append(li);
   }
-  $("#sd-status").textContent = files.length ? `${files.length} arquivo${files.length > 1 ? "s" : ""}, ${fmtSize(total)}` : "";
+  $("#sd-status").textContent = !files.length ? ""
+    : files.length === 1 ? t("sd.status.one", { size: fmtSize(total) }) : t("sd.status.many", { n: files.length, size: fmtSize(total) });
 }
 
 // Sends a file operation to the running Krux (one at a time).
@@ -780,7 +806,7 @@ async function pumpInbox() {
         ctrl.add(C.INBOX_SEQ);
         ctrl.wake();
       } else {
-        toast("Arquivo grande demais para enviar com a Krux ligada. Ele entra no cartão no próximo boot.", 5000);
+        toast(t("sd.tooBig"), 5000);
       }
     }
     job.resolve();
@@ -809,7 +835,7 @@ async function addFiles(fileList) {
     n++;
   }
   await refreshSD();
-  if (n) toast(n === 1 ? "Arquivo gravado no cartão." : `${n} arquivos gravados no cartão.`);
+  if (n) toast(n === 1 ? t("sd.written.one") : t("sd.written.many", { n }));
 }
 
 $("#sd-add").addEventListener("click", () => $("#sd-file").click());
@@ -820,10 +846,10 @@ $("#sd-file").addEventListener("change", async (e) => {
 });
 $("#sd-zip").addEventListener("click", async () => {
   const files = await storage.sdFiles();
-  if (!files.length) return toast("O cartão está vazio.");
+  if (!files.length) return toast(t("sd.zipEmpty"));
   const z = {};
   for (const f of files) z[f.name] = f.data;
-  download("cartao-sd-krux.zip", new Blob([zipSync(z)], { type: "application/zip" }));
+  download(t("sd.zipName"), new Blob([zipSync(z)], { type: "application/zip" }));
 });
 $("#sd-import").addEventListener("click", () => $("#sd-zip-file").click());
 $("#sd-zip-file").addEventListener("change", async (e) => {
@@ -834,7 +860,7 @@ $("#sd-zip-file").addEventListener("change", async (e) => {
   try {
     entries = unzipSync(new Uint8Array(await f.arrayBuffer()));
   } catch {
-    return toast("Não foi possível abrir esse .zip.");
+    return toast(t("sd.zipBad"));
   }
   let n = 0;
   for (const [name, data] of Object.entries(entries)) {
@@ -843,16 +869,16 @@ $("#sd-zip-file").addEventListener("change", async (e) => {
     n++;
   }
   await refreshSD();
-  toast(`${n} arquivo${n === 1 ? "" : "s"} importado${n === 1 ? "" : "s"} para o cartão.`);
+  toast(n === 1 ? t("sd.imported.one") : t("sd.imported.many", { n }));
 });
-armed($("#sd-clear"), "Confirmar: esvaziar", async () => {
+armed($("#sd-clear"), "sd.clearConfirm", async () => {
   for (const f of await storage.sdFiles()) {
     await storage.deleteFile(state.device, f.path);
     await sendToKrux(2, f.path);
     await mirrorDelete(f.name);
   }
   await refreshSD();
-  toast("Cartão esvaziado.");
+  toast(t("sd.cleared"));
 });
 
 const mat = $("#mat"), panel = $("#panel");
@@ -882,12 +908,17 @@ if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
 }
 
 // Real folder as the SD card (File System Access API: Chrome and Edge)
+function folderTexts() {
+  $("#sd-folder").textContent = t(state.folder ? "sd.folderStop" : "sd.folder");
+  if (state.folder) $("#sd-folder-note").textContent = t("sd.folderNote", { name: state.folder.name });
+}
+
 if ("showDirectoryPicker" in window) {
   $("#sd-folder").hidden = false;
   $("#sd-folder").addEventListener("click", async () => {
     if (state.folder) {
       state.folder = null;
-      $("#sd-folder").textContent = "Usar uma pasta do computador";
+      folderTexts();
       $("#sd-folder-note").hidden = true;
       return;
     }
@@ -913,12 +944,10 @@ if ("showDirectoryPicker" in window) {
     await storage.clearArea("sd");
     for (const [name, data] of files) await storage.putFile(state.device, "sd/" + name, data);
     state.folder = dir;
-    $("#sd-folder").textContent = "Parar de usar a pasta";
-    const note = $("#sd-folder-note");
-    note.hidden = false;
-    note.textContent = `O cartão agora espelha a pasta "${dir.name}": o que a Krux gravar aparece lá. Arquivos colocados na pasta por fora entram ao reiniciar a Krux.`;
+    folderTexts();
+    $("#sd-folder-note").hidden = false;
     await refreshSD();
-    toast(`Pasta "${dir.name}" carregada. Reiniciando a Krux com ela.`);
+    toast(t("sd.folderLoaded", { name: dir.name }));
     boot();
   });
 }
@@ -938,7 +967,7 @@ async function mirrorWrite(name, data) {
     await w.write(data);
     await w.close();
   } catch (e) {
-    toast("Não consegui gravar na pasta: " + e.message, 4000);
+    toast(t("sd.folderWriteFail", { err: e.message }), 4000);
   }
 }
 async function mirrorDelete(name) {
@@ -956,14 +985,14 @@ $("#btn-change").addEventListener("click", backToLauncher);
 $("#btn-link").addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(configURL());
-    toast("Link copiado. Ele abre direto nesta versão, dispositivo e idioma.");
+    toast(t("session.linkCopied"));
   } catch {
     toast(configURL(), 6000);
   }
 });
-armed($("#btn-flash"), "Confirmar: apagar", async () => {
+armed($("#btn-flash"), "session.flashConfirm", async () => {
   await storage.clearArea("flash", state.device);
-  toast("Memória interna apagada.");
+  toast(t("session.flashErased"));
   boot();
 });
 
@@ -999,7 +1028,75 @@ document.addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement && app.classList.contains("present")) exitPresent();
 });
 
+// ------------------------------------------------------------ page language
+
+// The header selector shows "EN"/"PT" on narrow screens to fit in one row
+const narrow = matchMedia("(max-width: 520px)");
+function fillLangSelects() {
+  for (const sel of document.querySelectorAll(".ui-lang-select")) {
+    if (!sel.options.length) {
+      for (const code of Object.keys(UI_LANGS)) {
+        const o = document.createElement("option");
+        o.value = code;
+        sel.append(o);
+      }
+      sel.addEventListener("change", () => setUILang(sel.value));
+    }
+    const short = narrow.matches && sel.closest(".bar");
+    for (const o of sel.options) o.textContent = short ? o.value.toUpperCase() : UI_LANGS[o.value];
+    sel.value = uiLang();
+  }
+}
+narrow.addEventListener("change", fillLangSelects);
+
+// Re-translates what the static attributes don't cover
+onUILang(() => {
+  fillLangSelects();
+  dropText();
+  sessionTexts();
+  folderTexts();
+  updateCameraUI();
+  if (state.index) {
+    const sel = $("#sel-version");
+    for (const o of sel.options) o.textContent = o.value === state.index.default ? t("launcher.latest", { v: o.value }) : o.value;
+  }
+  if (state.overlay) showOverlay(state.overlay.textKey, state.overlay.opts);
+  if (state.device) refreshSD();
+  if (app.dataset.view === "sim") history.replaceState(null, "", configURL());
+});
+
+// ------------------------------------------------------------------- notice
+
+// "Educational purposes only" notice, shown when the page opens (once per
+// browser session, so reloads during a class don't bring it back).
+const notice = $("#notice");
+let acceptNotice;
+const noticeAccepted = new Promise((r) => (acceptNotice = r));
+function noticeSeen() {
+  try { return sessionStorage.getItem("krux-web:notice") === "1"; } catch { return false; }
+}
+function openNotice() {
+  notice.hidden = false;
+  app.inert = true;
+  notice.scrollTop = 0;
+  $("#notice-ok").focus({ preventScroll: true });
+}
+function closeNotice() {
+  notice.hidden = true;
+  app.inert = false;
+  try { sessionStorage.setItem("krux-web:notice", "1"); } catch { /* private mode */ }
+  acceptNotice();
+}
+$("#notice-ok").addEventListener("click", closeNotice);
+$("#btn-notice").addEventListener("click", openNotice);
+
 // --------------------------------------------------------------------- init
+
+applyStatic();
+fillLangSelects();
+dropText();
+if (noticeSeen()) closeNotice();
+else openNotice();
 
 if (!window.crossOriginIsolated) {
   // coi-serviceworker reloads the page once it is active; if we are still not
@@ -1010,6 +1107,6 @@ if (!window.crossOriginIsolated) {
 } else {
   initLauncher().catch((e) => {
     console.error(e);
-    toast("Não foi possível carregar a lista de versões: " + e.message, 8000);
+    toast(t("boot.indexFail", { err: e.message }), 8000);
   });
 }

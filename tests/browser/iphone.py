@@ -3,12 +3,15 @@ import sys, time, os
 from playwright.sync_api import sync_playwright
 URL, OUT = sys.argv[1], sys.argv[2]
 os.makedirs(OUT, exist_ok=True)
+SKIP_NOTICE = "try { sessionStorage.setItem('krux-web:notice', '1') } catch (e) {}"
+
 with sync_playwright() as p:
     b = p.chromium.launch()
     for name in ["iPhone 14", "iPad Pro 11"]:
         dev = dict(p.devices[name])
         dev.pop("default_browser_type", None)
         ctx = b.new_context(**dev)
+        ctx.add_init_script(SKIP_NOTICE)
         page = ctx.new_page()
         page.goto(URL)
         page.wait_for_selector("#sel-version option", state="attached", timeout=30000)

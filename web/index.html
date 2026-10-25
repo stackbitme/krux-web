@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en-US">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -11,8 +11,8 @@
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icon-180.png">
-<title>Simulador Krux</title>
-<meta name="description" content="A Krux rodando no navegador, para estudar e apresentar.">
+<title>Krux Simulator</title>
+<meta name="description" content="Krux running in the browser, for study and presentations.">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <!-- Makes the page cross-origin isolated on hosts that can't send COOP/COEP headers -->
 <script src="coi-serviceworker.js"></script>
@@ -24,46 +24,53 @@
   <header class="bar">
     <div class="brand">
       <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2h4v8.5L15.5 2H20l-7 9 7.5 11H16l-5.6-8.4L9 15.3V22H5z"/></svg>
-      <span class="brand-name">Simulador Krux</span>
+      <span class="brand-name" data-i18n="title">Krux Simulator</span>
       <span class="brand-session" id="session-label"></span>
     </div>
-    <nav class="bar-actions" aria-label="Sessão">
-      <button class="btn ghost" id="btn-shot" type="button" title="Baixar a tela atual em PNG">Capturar tela</button>
-      <button class="btn ghost" id="btn-present" type="button" title="Esconde os painéis e aumenta o aparelho (Esc para sair)">Apresentar</button>
-      <button class="btn ghost" id="btn-change" type="button">Trocar versão</button>
-    </nav>
+    <div class="bar-right">
+      <nav class="bar-actions" data-i18n-aria="bar.session" aria-label="Session">
+        <button class="btn ghost" id="btn-shot" type="button" data-i18n="bar.shot" data-i18n-title="bar.shot.title">Screenshot</button>
+        <button class="btn ghost" id="btn-present" type="button" data-i18n="bar.present" data-i18n-title="bar.present.title">Present</button>
+        <button class="btn ghost" id="btn-change" type="button" data-i18n="bar.change">Change version</button>
+      </nav>
+      <label class="ui-lang" data-i18n-title="ui.lang" title="Page language">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.9 6h-3a15.7 15.7 0 0 0-1.4-3.9A8 8 0 0 1 18.9 8ZM12 4c.9 1.2 1.6 2.6 2 4h-4c.4-1.4 1.1-2.8 2-4ZM4.3 14a8.2 8.2 0 0 1 0-4h3.4a16.5 16.5 0 0 0 0 4H4.3Zm.8 2h3a15.7 15.7 0 0 0 1.4 3.9A8 8 0 0 1 5.1 16Zm3-8h-3a8 8 0 0 1 4.4-3.9C8.9 5.3 8.4 6.6 8.1 8ZM12 20c-.9-1.2-1.6-2.6-2-4h4c-.4 1.4-1.1 2.8-2 4Zm2.3-6H9.7a14.7 14.7 0 0 1 0-4h4.6a14.7 14.7 0 0 1 0 4Zm.3 5.9c.6-1.2 1.1-2.5 1.4-3.9h3a8 8 0 0 1-4.4 3.9Zm1.7-5.9a16.5 16.5 0 0 0 0-4h3.4a8.2 8.2 0 0 1 0 4h-3.4Z"/></svg>
+        <select class="ui-lang-select" data-i18n-aria="ui.lang" aria-label="Page language"></select>
+      </label>
+    </div>
   </header>
 
   <main class="workspace">
-    <section class="mat" id="mat" aria-label="Aparelho">
+    <section class="mat" id="mat" data-i18n-aria="mat.label" aria-label="Device">
       <div class="ruler ruler-x" aria-hidden="true"></div>
       <div class="ruler ruler-y" aria-hidden="true"></div>
 
       <!-- Launcher -->
       <form class="launcher" id="launcher" autocomplete="off">
-        <h1>Simulador Krux</h1>
-        <p class="lead">A Krux de verdade, rodando no navegador, para estudar e apresentar.</p>
+        <h1 data-i18n="title">Krux Simulator</h1>
+        <p class="lead" data-i18n="launcher.lead">The real Krux, running in your browser, for study and presentations.</p>
         <label class="field">
-          <span>Versão</span>
+          <span data-i18n="launcher.version">Version</span>
           <select id="sel-version" required></select>
         </label>
         <label class="field">
-          <span>Dispositivo</span>
+          <span data-i18n="launcher.device">Device</span>
           <select id="sel-device" required></select>
         </label>
         <label class="field">
-          <span>Idioma da Krux</span>
+          <span data-i18n="launcher.lang">Krux language</span>
           <select id="sel-lang"></select>
         </label>
-        <button class="btn primary big" type="submit" id="btn-start">Ligar</button>
-        <p class="fine">O cartão SD e as configurações ficam salvos neste navegador. Nada sai do seu computador.</p>
+        <button class="btn primary big" type="submit" id="btn-start" data-i18n="launcher.start">Power on</button>
+        <p class="fine" data-i18n="launcher.fine">The SD card and settings are saved in this browser. Nothing leaves your computer.</p>
+        <button class="linkish fine" type="button" id="btn-notice" data-i18n="launcher.notice">For educational purposes only. Read the notice</button>
       </form>
 
       <!-- Device -->
       <div class="stage-wrap" id="stage-wrap" hidden>
         <div class="stage" id="stage">
           <div class="screen-bed" id="screen-bed" aria-hidden="true"></div>
-          <canvas class="lcd" id="lcd" width="320" height="480" tabindex="0" aria-label="Tela da Krux"></canvas>
+          <canvas class="lcd" id="lcd" width="320" height="480" tabindex="0" data-i18n-aria="lcd.label" aria-label="Krux screen"></canvas>
           <img class="device" id="device-img" alt="" draggable="false">
           <div class="overlay" id="overlay" hidden>
             <p class="overlay-text" id="overlay-text"></p>
@@ -72,57 +79,57 @@
           </div>
         </div>
       </div>
-      <p class="keys-hint" id="keys-hint" hidden>Clique na tela para tocar. Teclado: Enter, ↓ e ↑ fazem as vezes dos botões.</p>
-      <button class="btn present-exit" id="btn-present-exit" type="button">Sair da apresentação</button>
+      <p class="keys-hint" id="keys-hint" data-i18n="keys.hint" hidden>Click the screen to tap. Keyboard: Enter, ↓ and ↑ act as the buttons.</p>
+      <button class="btn present-exit" id="btn-present-exit" type="button" data-i18n="present.exit">Exit presentation</button>
     </section>
 
     <aside class="panel" id="panel" hidden>
 
       <section class="block" id="cam-block">
         <div class="block-head">
-          <h2>Câmera</h2>
-          <span class="status" id="cam-status">desligada na Krux</span>
+          <h2 data-i18n="cam.title">Camera</h2>
+          <span class="status" id="cam-status">off in Krux</span>
         </div>
-        <div class="seg" role="group" aria-label="Fonte da câmera">
-          <button class="btn seg-btn" type="button" data-src="webcam">Webcam</button>
-          <button class="btn seg-btn" type="button" data-src="screen">Tela ou janela</button>
+        <div class="seg" role="group" data-i18n-aria="cam.source" aria-label="Camera source">
+          <button class="btn seg-btn" type="button" data-src="webcam" data-i18n="cam.webcam">Webcam</button>
+          <button class="btn seg-btn" type="button" data-src="screen" data-i18n="cam.screen">Screen or window</button>
         </div>
-        <div class="img-drop" id="img-drop" tabindex="0" role="group" aria-label="Imagem de QR">
-          <p>Arraste uma imagem de QR para cá ou cole com <kbd id="paste-key">Ctrl+V</kbd></p>
+        <div class="img-drop" id="img-drop" tabindex="0" role="group" data-i18n-aria="cam.image" aria-label="QR image">
+          <p id="img-drop-text">Drag a QR image here or paste with <kbd>Ctrl+V</kbd></p>
           <div class="row">
-            <button class="btn small" type="button" id="img-paste">Colar imagem</button>
-            <button class="btn small" type="button" id="img-choose">Escolher arquivo</button>
+            <button class="btn small" type="button" id="img-paste" data-i18n="cam.paste">Paste image</button>
+            <button class="btn small" type="button" id="img-choose" data-i18n="cam.choose">Choose file</button>
           </div>
         </div>
         <input type="file" id="cam-file" accept="image/*" hidden>
         <div class="cam-preview" id="cam-preview-box">
           <canvas id="cam-preview"></canvas>
-          <p class="cam-empty" id="cam-empty">A prévia do que a Krux vai ver aparece aqui.</p>
+          <p class="cam-empty" id="cam-empty" data-i18n="cam.empty">A preview of what Krux will see appears here.</p>
         </div>
-        <p class="hint" id="cam-hint" hidden>Marque o QR para a Krux ler só aquela parte: arraste sobre a prévia ou use "Selecionar área".</p>
+        <p class="hint" id="cam-hint" data-i18n="cam.hint" hidden>Mark the QR so Krux reads only that part: drag over the preview or use "Select area".</p>
         <div class="row wrap" id="cam-actions" hidden>
-          <button class="btn small" type="button" id="cam-pick">Selecionar área</button>
-          <button class="btn small" type="button" id="cam-full">Usar a imagem toda</button>
-          <button class="btn small" type="button" id="cam-stop">Parar</button>
+          <button class="btn small" type="button" id="cam-pick" data-i18n="cam.pick">Select area</button>
+          <button class="btn small" type="button" id="cam-full" data-i18n="cam.full">Use the whole image</button>
+          <button class="btn small" type="button" id="cam-stop" data-i18n="cam.stop">Stop</button>
         </div>
         <p class="hint qr-note" id="qr-note" aria-live="polite"></p>
       </section>
 
       <section class="block" id="sd-block">
         <div class="block-head">
-          <h2>Cartão SD</h2>
+          <h2 data-i18n="sd.title">SD card</h2>
           <span class="status" id="sd-status"></span>
         </div>
         <ul class="files" id="sd-list"></ul>
-        <div class="dropzone" id="sd-drop">Solte arquivos aqui para gravar no cartão</div>
+        <div class="dropzone" id="sd-drop" data-i18n="sd.drop">Drop files here to write them to the card</div>
         <div class="row wrap">
-          <button class="btn small" type="button" id="sd-add">Adicionar arquivos</button>
-          <button class="btn small" type="button" id="sd-zip">Baixar .zip</button>
-          <button class="btn small" type="button" id="sd-import">Importar .zip</button>
+          <button class="btn small" type="button" id="sd-add" data-i18n="sd.add">Add files</button>
+          <button class="btn small" type="button" id="sd-zip" data-i18n="sd.zip">Download .zip</button>
+          <button class="btn small" type="button" id="sd-import" data-i18n="sd.import">Import .zip</button>
         </div>
         <div class="row wrap">
-          <button class="btn small" type="button" id="sd-folder" hidden>Usar uma pasta do computador</button>
-          <button class="btn small danger" type="button" id="sd-clear">Esvaziar cartão</button>
+          <button class="btn small" type="button" id="sd-folder" hidden>Use a folder on this computer</button>
+          <button class="btn small danger" type="button" id="sd-clear" data-i18n="sd.clear">Empty card</button>
         </div>
         <p class="hint" id="sd-folder-note" hidden></p>
         <input type="file" id="sd-file" multiple hidden>
@@ -131,27 +138,27 @@
 
       <section class="block" id="btn-block">
         <div class="block-head">
-          <h2>Botões</h2>
+          <h2 data-i18n="buttons.title">Buttons</h2>
         </div>
         <div class="hw-buttons">
-          <button class="btn hw" type="button" data-key="ENTER">Enter <kbd>Enter</kbd></button>
-          <button class="btn hw" type="button" data-key="DOWN">Próximo <kbd>↓</kbd></button>
-          <button class="btn hw" type="button" data-key="UP">Anterior <kbd>↑</kbd></button>
+          <button class="btn hw" type="button" data-key="ENTER"><span data-i18n="buttons.enter">Enter</span> <kbd>Enter</kbd></button>
+          <button class="btn hw" type="button" data-key="DOWN"><span data-i18n="buttons.next">Next</span> <kbd>↓</kbd></button>
+          <button class="btn hw" type="button" data-key="UP"><span data-i18n="buttons.prev">Previous</span> <kbd>↑</kbd></button>
         </div>
       </section>
 
       <section class="block" id="session-block">
         <div class="block-head">
-          <h2>Sessão</h2>
+          <h2 data-i18n="session.title">Session</h2>
         </div>
         <div class="row wrap">
-          <button class="btn small" type="button" id="btn-restart">Reiniciar a Krux</button>
-          <button class="btn small" type="button" id="btn-link">Copiar link desta configuração</button>
-          <button class="btn small danger" type="button" id="btn-flash">Apagar memória interna</button>
+          <button class="btn small" type="button" id="btn-restart" data-i18n="session.restart">Restart Krux</button>
+          <button class="btn small" type="button" id="btn-link" data-i18n="session.link">Copy link to this setup</button>
+          <button class="btn small danger" type="button" id="btn-flash" data-i18n="session.flash">Erase internal memory</button>
         </div>
-        <p class="hint">A memória interna guarda configurações, PIN e o aceite do aviso inicial deste dispositivo.</p>
+        <p class="hint" data-i18n="session.hint">Internal memory holds this device's settings, PIN and the acceptance of Krux's initial notice.</p>
         <details class="log">
-          <summary>Registro da Krux</summary>
+          <summary data-i18n="session.log">Krux log</summary>
           <pre id="log"></pre>
         </details>
       </section>
@@ -160,23 +167,44 @@
 
   <div class="picker" id="picker" role="dialog" aria-modal="true" aria-labelledby="picker-title" hidden>
     <div class="picker-head">
-      <h2 id="picker-title">Marque o QR code</h2>
-      <p>Arraste um retângulo em volta do QR. A Krux vai ler só essa parte. Dá para refazer quantas vezes quiser. Você também pode soltar ou colar outra imagem aqui.</p>
+      <h2 id="picker-title" data-i18n="picker.title">Mark the QR code</h2>
+      <p data-i18n="picker.text">Drag a rectangle around the QR. Krux will read only that part. You can redo it as many times as you like. You can also drop or paste another image here.</p>
     </div>
     <canvas class="picker-canvas" id="picker-canvas"></canvas>
     <div class="picker-actions">
-      <button class="btn" type="button" id="picker-all">Usar a imagem toda</button>
-      <button class="btn primary" type="button" id="picker-done">Pronto</button>
+      <button class="btn" type="button" id="picker-all" data-i18n="picker.all">Use the whole image</button>
+      <button class="btn primary" type="button" id="picker-done" data-i18n="picker.done">Done</button>
     </div>
   </div>
 
   <div class="blocked" id="blocked" hidden>
-    <h1>Abra pelo servidor local</h1>
-    <p>O simulador precisa de um recurso do navegador (memória compartilhada) que não funciona abrindo o arquivo direto.</p>
-    <p>Na pasta do projeto, rode <code>python3 serve.py</code> e abra <a href="http://localhost:8000">http://localhost:8000</a>.</p>
+    <h1 data-i18n="blocked.title">Open it through the local server</h1>
+    <p data-i18n="blocked.p1">The simulator needs a browser feature (shared memory) that does not work when the file is opened directly.</p>
+    <p data-i18n-html="blocked.p2">In the project folder, run <code>python3 serve.py</code> and open <a href="http://localhost:8000">http://localhost:8000</a>.</p>
   </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </div>
+
+<!-- Shown when the page opens (once per browser session) -->
+<div class="notice" id="notice" role="dialog" aria-modal="true" aria-labelledby="notice-title" aria-describedby="notice-intro">
+    <div class="notice-card">
+      <div class="notice-top">
+        <p class="notice-kicker" data-i18n="notice.kicker">Before you start</p>
+        <label class="ui-lang" data-i18n-title="ui.lang" title="Page language">
+          <select class="ui-lang-select" data-i18n-aria="ui.lang" aria-label="Page language"></select>
+        </label>
+      </div>
+      <h2 id="notice-title" data-i18n="notice.title">For educational purposes only</h2>
+      <p class="notice-intro" id="notice-intro" data-i18n="notice.intro">This is an unofficial simulator of Krux, made for study, teaching and presentations. It is not a wallet.</p>
+      <ul class="notice-list">
+        <li data-i18n-html="notice.p1"><strong>Do not use real funds.</strong> Do not load seeds, keys or backups that control, or will control, real bitcoin. A web browser is not a safe place for keys.</li>
+        <li data-i18n-html="notice.p2"><strong>Not official.</strong> Not affiliated with or endorsed by the Krux project. Krux is © Krux contributors, MIT license, and runs here unmodified.</li>
+        <li data-i18n-html="notice.p3"><strong>No warranty.</strong> Provided as is. Behavior may differ from a real device. You are responsible for how you use it.</li>
+      </ul>
+      <button class="btn primary big" type="button" id="notice-ok" data-i18n="notice.ok">I understand</button>
+    </div>
+  </div>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

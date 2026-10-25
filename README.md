@@ -1,5 +1,10 @@
 # Simulador Krux no navegador
 
+> **For educational purposes only / Apenas para fins educacionais.** Unofficial
+> simulator, not a wallet: do not use it with real funds. Not affiliated with or
+> endorsed by the Krux project. Simulador não oficial, não é uma carteira: não use
+> com fundos reais. Sem vínculo com o projeto Krux.
+
 A Krux de verdade rodando dentro do navegador, para estudar e apresentar. O código
 da Krux não é alterado: é o mesmo `src/` da versão oficial, executado num Python
 que roda no navegador (Pyodide). Só a camada que finge ser o hardware (tela, toque,
@@ -62,6 +67,13 @@ servidor.
 - **Capturar tela:** baixa um PNG da tela da Krux em 2x, bom para slides.
 - **Link direto:** `?v=v26.09.0&device=amigo&lang=pt-BR` abre sem passar pelo
   menu inicial. O botão "Copiar link desta configuração" gera esse link.
+- **Idioma da página:** inglês por padrão. O seletor no canto superior direito (e
+  no aviso inicial) troca para português, e a escolha fica salva. `?ui=pt` ou
+  `?ui=en` no link força um idioma. O idioma da Krux é outra coisa: é escolhido no
+  menu inicial e também vem em inglês por padrão.
+- **Aviso inicial:** ao abrir a página aparece o aviso "apenas para fins
+  educacionais". Ele volta a cada nova aba ou janela, mas não ao recarregar a
+  página. Dá para reabrir pelo link no menu inicial.
 
 Tudo fica salvo só neste navegador (IndexedDB). Limpar os dados do site apaga o
 cartão e a memória interna.

@@ -3,10 +3,13 @@ import sys, time, os
 from playwright.sync_api import sync_playwright
 URL, OUT = sys.argv[1], sys.argv[2]
 os.makedirs(OUT, exist_ok=True)
+SKIP_NOTICE = "try { sessionStorage.setItem('krux-web:notice', '1') } catch (e) {}"
+
 with sync_playwright() as p:
     b = p.chromium.launch(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
                                 "--auto-select-desktop-capture-source=Entire screen", "--auto-accept-this-tab-capture"])
     page = b.new_page(viewport={"width": 1000, "height": 730}, device_scale_factor=2)
+    page.add_init_script(SKIP_NOTICE)
     page.goto(URL + "?v=v26.09.0&device=amigo&lang=en-US")
     page.wait_for_function("window.__krux && window.__krux.lastFrame > 0 && document.querySelector('#overlay').hidden", timeout=120000)
     time.sleep(2)

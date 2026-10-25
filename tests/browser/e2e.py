@@ -43,6 +43,25 @@ with sync_playwright() as p:
     page.goto(URL)
     page.wait_for_selector("#sel-version option", state="attached", timeout=30000)
     check("cross-origin isolated", page.evaluate("crossOriginIsolated"))
+
+    # "educational purposes only" notice, page in English by default
+    check("notice shown", page.is_visible("#notice"))
+    check("page in English", page.inner_text("#notice-title") == "For educational purposes only"
+          and page.evaluate("document.documentElement.lang") == "en-US")
+    check("Krux language defaults to English", page.input_value("#sel-lang") == "en-US")
+    page.screenshot(path=OUT + "/00-notice-en.png")
+    page.select_option("#notice .ui-lang-select", "pt")
+    check("page language switch", page.inner_text("#notice-title") == "Apenas para fins educacionais"
+          and page.inner_text("#btn-start") == "Ligar" and page.input_value(".bar .ui-lang-select") == "pt")
+    page.screenshot(path=OUT + "/00-notice-pt.png")
+    page.click("#notice-ok")
+    check("notice closes", not page.is_visible("#notice"))
+    page.reload()
+    page.wait_for_selector("#sel-version option", state="attached", timeout=30000)
+    check("notice once per session, language remembered",
+          not page.is_visible("#notice") and page.inner_text("#btn-start") == "Ligar")
+    page.screenshot(path=OUT + "/01-launcher-pt.png")
+    page.select_option(".bar .ui-lang-select", "en")
     page.screenshot(path=OUT + "/01-launcher.png")
     page.click("#btn-start")
     page.wait_for_function("document.querySelector('#overlay').hidden === true", timeout=120000)
@@ -60,7 +79,7 @@ with sync_playwright() as p:
     tap(page, 160, 60); time.sleep(1.2)
     tap(page, 160, 60); time.sleep(1.5)
     st = page.inner_text("#cam-status")
-    check("camera requested by Krux", "esperando" in st, st)
+    check("camera requested by Krux", "waiting" in st, st)
     page.screenshot(path=OUT + "/04-camera-waiting.png")
     page.set_input_files("#cam-file", os.path.join(QR_DIR, "12-word-mnemonic_b.png"))
     page.wait_for_function("document.querySelector('#qr-note').textContent.includes('bytes')", timeout=20000)
@@ -103,8 +122,8 @@ with sync_playwright() as p:
     tap(page, 160, 437)  # Shutdown
     time.sleep(1.5)
     page.screenshot(path=OUT + "/10a-shutdown-confirm.png")
-    tap(page, 240, 285)  # "Sim"
-    page.wait_for_function("!document.querySelector('#overlay').hidden && document.querySelector('#overlay-text').textContent.includes('desligada')", timeout=20000)
+    tap(page, 240, 285)  # "Yes"
+    page.wait_for_function("!document.querySelector('#overlay').hidden && document.querySelector('#overlay-text').textContent.includes('powered off')", timeout=20000)
     check("shutdown shows overlay", True, page.inner_text("#overlay-text"))
     page.screenshot(path=OUT + "/10b-shutdown.png")
     page.click("#overlay-btn")
@@ -117,6 +136,7 @@ with sync_playwright() as p:
 
     # mobile layout
     mob = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    mob.add_init_script("try { sessionStorage.setItem('krux-web:notice', '1') } catch (e) {}")
     mp = mob.new_page()
     mp.goto(URL)
     mp.wait_for_selector("#sel-version option", state="attached", timeout=30000)

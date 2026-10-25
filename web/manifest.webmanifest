@@ -1,8 +1,8 @@
 {
-  "name": "Simulador Krux",
+  "name": "Krux Simulator",
   "short_name": "Krux",
-  "description": "A Krux rodando no navegador, para estudar e apresentar.",
-  "lang": "pt-BR",
+  "description": "Krux running in the browser, for study and presentations.",
+  "lang": "en-US",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -11,10 +11,13 @@ def tap(page, x, y):
 
 MAKE_FILE = "async (b64) => { const r = await fetch('data:image/png;base64,' + b64); return new File([await r.blob()], 'qr.png', {type: 'image/png'}); }"
 
+SKIP_NOTICE = "try { sessionStorage.setItem('krux-web:notice', '1') } catch (e) {}"
+
 with sync_playwright() as p:
     b = p.chromium.launch()
     ctx = b.new_context(viewport={"width": 1280, "height": 860})
     ctx.grant_permissions(["clipboard-read", "clipboard-write"], origin=URL.rstrip("/"))
+    ctx.add_init_script(SKIP_NOTICE)
     page = ctx.new_page()
     page.goto(URL + "?v=v26.09.0&device=amigo&lang=en-US")
     page.wait_for_function("window.__krux && window.__krux.lastFrame > 0 && document.querySelector('#overlay').hidden", timeout=120000)
