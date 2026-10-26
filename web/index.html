@@ -29,6 +29,11 @@
     </div>
     <div class="bar-right">
       <nav class="bar-actions" data-i18n-aria="bar.session" aria-label="Session">
+        <button class="btn sheet-toggle" id="btn-sheet" type="button" aria-controls="panel" aria-expanded="false" data-state="idle">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1.6 2H20a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3.4L9 3Zm3 5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z"/></svg>
+          <span data-i18n="sheet.toggle">Camera</span>
+          <i class="dot" aria-hidden="true"></i>
+        </button>
         <button class="btn ghost" id="btn-shot" type="button" data-i18n="bar.shot" data-i18n-title="bar.shot.title">Screenshot</button>
         <button class="btn ghost" id="btn-present" type="button" data-i18n="bar.present" data-i18n-title="bar.present.title">Present</button>
         <button class="btn ghost" id="btn-change" type="button" data-i18n="bar.change">Change version</button>
@@ -84,6 +89,11 @@
     </section>
 
     <aside class="panel" id="panel" hidden>
+      <div class="sheet-head">
+        <span class="sheet-grab" aria-hidden="true"></span>
+        <span class="sheet-title" data-i18n="sheet.title">Controls</span>
+        <button class="btn small" type="button" id="sheet-close" data-i18n="sheet.close">Close</button>
+      </div>
 
       <section class="block" id="cam-block">
         <div class="block-head">
@@ -95,7 +105,7 @@
           <button class="btn seg-btn" type="button" data-src="screen" data-i18n="cam.screen">Screen or window</button>
         </div>
         <div class="img-drop" id="img-drop" tabindex="0" role="group" data-i18n-aria="cam.image" aria-label="QR image">
-          <p id="img-drop-text">Drag a QR image here or paste with <kbd>Ctrl+V</kbd></p>
+          <p id="img-drop-text" class="drop-text">Drag a QR image here or paste with <kbd>Ctrl+V</kbd></p>
           <div class="row">
             <button class="btn small" type="button" id="img-paste" data-i18n="cam.paste">Paste image</button>
             <button class="btn small" type="button" id="img-choose" data-i18n="cam.choose">Choose file</button>
@@ -113,6 +123,7 @@
           <button class="btn small" type="button" id="cam-stop" data-i18n="cam.stop">Stop</button>
         </div>
         <p class="hint qr-note" id="qr-note" aria-live="polite"></p>
+        <button class="btn small sheet-more" type="button" id="sheet-more" data-i18n="sheet.more">Show all controls</button>
       </section>
 
       <section class="block" id="sd-block">
@@ -155,6 +166,10 @@
           <button class="btn small" type="button" id="btn-restart" data-i18n="session.restart">Restart Krux</button>
           <button class="btn small" type="button" id="btn-link" data-i18n="session.link">Copy link to this setup</button>
           <button class="btn small danger" type="button" id="btn-flash" data-i18n="session.flash">Erase internal memory</button>
+        </div>
+        <div class="row wrap mobile-only">
+          <button class="btn small" type="button" id="btn-change-m" data-i18n="bar.change">Change version</button>
+          <button class="btn small" type="button" id="btn-shot-m" data-i18n="bar.shot">Screenshot</button>
         </div>
         <p class="hint" data-i18n="session.hint">Internal memory holds this device's settings, PIN and the acceptance of Krux's initial notice.</p>
         <details class="log">

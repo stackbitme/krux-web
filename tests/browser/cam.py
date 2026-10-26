@@ -37,16 +37,20 @@ with sync_playwright() as p:
     page.click('[data-src="webcam"]'); time.sleep(2.5)
     print("webcam lit:", lit(page), "status:", page.inner_text("#cam-status"))
     page.screenshot(path=OUT + "/cam-webcam.png")
-    # region select on the preview
-    box = page.locator("#cam-preview").bounding_box()
-    page.mouse.move(box["x"] + box["width"] * 0.3, box["y"] + box["height"] * 0.3)
-    page.mouse.down(); page.mouse.move(box["x"] + box["width"] * 0.7, box["y"] + box["height"] * 0.8, steps=5); page.mouse.up()
-    time.sleep(1)
-    print("region set:", page.evaluate("!document.querySelector('#cam-full').disabled"))
-    page.screenshot(path=OUT + "/cam-region.png")
+    def drag_region():
+        box = page.locator("#cam-preview").bounding_box()
+        page.mouse.move(box["x"] + box["width"] * 0.3, box["y"] + box["height"] * 0.3)
+        page.mouse.down(); page.mouse.move(box["x"] + box["width"] * 0.7, box["y"] + box["height"] * 0.8, steps=5); page.mouse.up()
+        time.sleep(1)
+        return page.evaluate("!!window.__cam.region")
+
+    # webcam: no area selection (you aim the camera)
+    print("webcam region ignored:", not drag_region(), "| area tools hidden:", not page.is_visible("#cam-pick"))
     try:
         page.click('[data-src="screen"]'); time.sleep(2.5)
         print("screen pressed:", page.evaluate("document.querySelector('[data-src=screen]').getAttribute('aria-pressed')"), "lit:", lit(page))
+        page.click("#picker-done"); time.sleep(0.5)  # the picker opens by itself after capture
+        print("screen region set:", drag_region(), "| area tools shown:", page.is_visible("#cam-pick"))
         page.screenshot(path=OUT + "/cam-screen.png")
     except Exception as e:
         print("screen capture error:", e)

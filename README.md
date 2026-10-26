@@ -5,6 +5,10 @@
 > endorsed by the Krux project. Simulador não oficial, não é uma carteira: não use
 > com fundos reais. Sem vínculo com o projeto Krux.
 
+Vibecodado por um curioso ([Valandro](https://stackbit.me)), na base da
+tentativa, erro e muita conversa com IA. Funciona, tem testes, mas não espere
+código de engenheiro sênior.
+
 A Krux de verdade rodando dentro do navegador, para estudar e apresentar. O código
 da Krux não é alterado: é o mesmo `src/` da versão oficial, executado num Python
 que roda no navegador (Pyodide). Só a camada que finge ser o hardware (tela, toque,
@@ -53,8 +57,8 @@ servidor.
     de outra aba do navegador), cole com Ctrl+V / Cmd+V ou use "Colar imagem" e
     "Escolher arquivo".
 
-  Para a Krux ler só uma parte da imagem (útil quando há mais de um QR na tela),
-  use "Selecionar área": abre a imagem grande para você desenhar um retângulo em
+  Ao compartilhar a tela, dá para a Krux ler só uma parte dela (útil quando há
+  mais de um QR na tela): use "Selecionar área": abre a imagem grande para você desenhar um retângulo em
   volta do QR. Ao compartilhar a tela, esse seletor abre sozinho. QR animados
   (PSBT, UR, BBQr) funcionam.
 - **Cartão SD:** adicione arquivos (botão ou arrastando para a página), baixe,
@@ -163,6 +167,10 @@ pelo IP do computador na rede local).
 
 - Toque, botões, cartão SD, câmera (traseira ou frontal) e imagem colada ou
   escolhida funcionam.
+- O aparelho ocupa a tela inteira. Câmera, cartão SD e os outros controles ficam
+  numa gaveta que sobe de baixo: abre pelo botão **Câmera** no canto superior
+  direito e abre sozinha quando a Krux liga a câmera. Escolhida a fonte, ela se
+  fecha para você ver a tela da Krux.
 - "Tela ou janela" e "Usar uma pasta do computador" não existem no iOS e ficam
   escondidos.
 - O Python no navegador usa algumas centenas de MB de memória: num iPhone antigo

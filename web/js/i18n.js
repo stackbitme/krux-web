@@ -29,6 +29,11 @@ const STRINGS = {
     "launcher.keepLang": "Keep what is saved",
 
     "lcd.label": "Krux screen",
+    "sheet.toggle": "Camera",
+    "sheet.title": "Camera and controls",
+    "sheet.close": "Close",
+    "sheet.more": "Show all controls",
+    "cam.imageTouch": "Or use a photo or screenshot of a QR code:",
     "keys.hint": "Click the screen to tap. Keyboard: Enter, ↓ and ↑ act as the buttons.",
     "present.exit": "Exit presentation",
 
@@ -41,7 +46,7 @@ const STRINGS = {
     "cam.paste": "Paste image",
     "cam.choose": "Choose file",
     "cam.empty": "A preview of what Krux will see appears here.",
-    "cam.hint": "Mark the QR so Krux reads only that part: drag over the preview or use \"Select area\".",
+    "cam.hint": "Mark the QR so Krux reads only that part of the screen: drag over the preview or use \"Select area\".",
     "cam.pick": "Select area",
     "cam.full": "Use the whole image",
     "cam.stop": "Stop",
@@ -156,6 +161,11 @@ const STRINGS = {
     "launcher.keepLang": "Manter o que estiver salvo",
 
     "lcd.label": "Tela da Krux",
+    "sheet.toggle": "Câmera",
+    "sheet.title": "Câmera e controles",
+    "sheet.close": "Fechar",
+    "sheet.more": "Mostrar todos os controles",
+    "cam.imageTouch": "Ou use uma foto ou print de um QR code:",
     "keys.hint": "Clique na tela para tocar. Teclado: Enter, ↓ e ↑ fazem as vezes dos botões.",
     "present.exit": "Sair da apresentação",
 
@@ -168,7 +178,7 @@ const STRINGS = {
     "cam.paste": "Colar imagem",
     "cam.choose": "Escolher arquivo",
     "cam.empty": "A prévia do que a Krux vai ver aparece aqui.",
-    "cam.hint": "Marque o QR para a Krux ler só aquela parte: arraste sobre a prévia ou use \"Selecionar área\".",
+    "cam.hint": "Marque o QR para a Krux ler só aquela parte da tela: arraste sobre a prévia ou use \"Selecionar área\".",
     "cam.pick": "Selecionar área",
     "cam.full": "Usar a imagem toda",
     "cam.stop": "Parar",

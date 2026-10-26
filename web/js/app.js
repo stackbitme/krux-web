@@ -206,6 +206,7 @@ async function start(version, device, lang) {
 }
 
 function backToLauncher() {
+  closeSheet();
   stopWorker();
   exitPresent();
   app.dataset.view = "launcher";
@@ -477,6 +478,10 @@ async function onWorkerMessage(worker, m) {
       break;
     case "camera":
       updateCameraUI();
+      if (mobile.matches) {
+        if (m.on && !camera.active) openSheet(true);
+        else if (!m.on && sheetAuto) closeSheet();
+      }
       break;
     case "file":
       await storage.putFile(state.device, m.path, m.data);
@@ -573,6 +578,7 @@ function keyUp(name) {
 const KEYMAP = { Enter: "ENTER", ArrowDown: "DOWN", ArrowUp: "UP" };
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && app.classList.contains("present")) return exitPresent();
+  if (e.key === "Escape" && app.classList.contains("sheet-open")) return closeSheet();
   if (app.dataset.view !== "sim") return;
   const t = e.target;
   if (t.closest && t.closest("input, select, textarea")) return;
@@ -594,6 +600,29 @@ for (const b of document.querySelectorAll(".hw")) {
   b.addEventListener("keyup", (e) => { if (e.key === " " || e.key === "Enter") keyUp(b.dataset.key); });
 }
 
+// ------------------------------------------------------------ bottom sheet
+
+// On phones and tablets the panel is a bottom sheet over the device, opened
+// from the Camera button and automatically when Krux turns the camera on.
+const mobile = matchMedia("(max-width: 860px)");
+let sheetAuto = false; // opened by Krux asking for the camera
+function openSheet(auto = false) {
+  sheetAuto = auto;
+  app.classList.toggle("sheet-camera", auto); // only the camera block
+  app.classList.add("sheet-open");
+  $("#btn-sheet").setAttribute("aria-expanded", "true");
+  $("#panel").scrollTop = 0;
+}
+function closeSheet() {
+  sheetAuto = false;
+  app.classList.remove("sheet-open");
+  $("#btn-sheet").setAttribute("aria-expanded", "false");
+}
+$("#btn-sheet").addEventListener("click", () => (app.classList.contains("sheet-open") ? closeSheet() : openSheet()));
+$("#sheet-close").addEventListener("click", closeSheet);
+$("#sheet-more").addEventListener("click", () => app.classList.remove("sheet-camera"));
+mobile.addEventListener("change", () => { if (!mobile.matches) closeSheet(); });
+
 // ------------------------------------------------------------------- camera
 
 const camera = new CameraFeed({ preview: $("#cam-preview"), onChange: () => updateCameraUI() });
@@ -606,10 +635,17 @@ function updateCameraUI() {
   status.classList.toggle("live", wants);
   $("#cam-preview-box").classList.toggle("waiting", wants && !camera.active);
   $("#cam-empty").hidden = camera.active;
-  $("#cam-hint").hidden = !camera.active;
+  // Picking a smaller area only matters when capturing a screen (a webcam is
+  // aimed, an image can be cropped before pasting)
+  const screen = camera.kind === "screen";
+  $("#cam-hint").hidden = !screen;
   $("#cam-actions").hidden = !camera.active;
+  $("#cam-pick").hidden = !screen;
+  $("#cam-full").hidden = !screen;
   $("#cam-full").disabled = !camera.region;
-  if (!camera.active) closePicker();
+  $("#cam-preview-box").classList.toggle("regionable", screen);
+  if (!screen) closePicker();
+  $("#btn-sheet").dataset.state = wants ? (camera.active ? "live" : "waiting") : camera.active ? "live" : "idle";
   for (const b of document.querySelectorAll(".seg-btn")) b.setAttribute("aria-pressed", String(camera.kind === b.dataset.src));
   $("#img-drop").classList.toggle("active", camera.kind === "image");
   const q = camera.lastQR;
@@ -620,8 +656,10 @@ setInterval(updateCameraUI, 1000);
 for (const b of document.querySelectorAll(".seg-btn")) {
   b.addEventListener("click", async () => {
     try {
-      if (b.dataset.src === "webcam") await camera.useWebcam();
-      else if (b.dataset.src === "screen") {
+      if (b.dataset.src === "webcam") {
+        await camera.useWebcam();
+        if (mobile.matches) closeSheet();
+      } else if (b.dataset.src === "screen") {
         await camera.useScreen();
         openPicker();
       }
@@ -635,14 +673,14 @@ for (const b of document.querySelectorAll(".seg-btn")) {
 $("#cam-file").addEventListener("change", async (e) => {
   const f = e.target.files[0];
   e.target.value = "";
-  if (f) await camera.useImage(f).catch(() => toast(t("cam.notImage")));
+  if (f) await useImageBlob(f, "cam.imageLoaded");
 });
 $("#cam-full").addEventListener("click", () => camera.clearRegion());
 
 // Large region picker (a "snipping tool" over the captured image)
 const picker = $("#picker");
 function openPicker() {
-  if (!camera.active) return;
+  if (camera.kind !== "screen") return;
   picker.hidden = false;
   camera.addView($("#picker-canvas"));
   $("#picker-done").focus();
@@ -662,6 +700,7 @@ $("#cam-stop").addEventListener("click", () => camera.stop());
 async function useImageBlob(blob, how) {
   try {
     await camera.useImage(blob);
+    if (mobile.matches) closeSheet();
     toast(t(how));
   } catch {
     toast(t("cam.notImage"));
@@ -727,10 +766,14 @@ $("#img-paste").addEventListener("click", async () => {
   }
 });
 $("#img-choose").addEventListener("click", () => $("#cam-file").click());
+// Touch screens can't drag or press Ctrl+V: just offer the buttons
+const touchOnly = matchMedia("(hover: none) and (pointer: coarse)");
 function dropText() {
   const esc = (x) => x.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
-  $("#img-drop-text").innerHTML = esc(t("cam.drop")).replace("{key}", `<kbd>${PASTE_KEY}</kbd>`);
+  $("#img-drop-text").innerHTML = touchOnly.matches ? esc(t("cam.imageTouch"))
+    : esc(t("cam.drop")).replace("{key}", `<kbd>${PASTE_KEY}</kbd>`);
 }
+touchOnly.addEventListener("change", dropText);
 
 // ------------------------------------------------------------------ SD card
 
@@ -982,6 +1025,8 @@ async function mirrorDelete(name) {
 
 $("#btn-restart").addEventListener("click", boot);
 $("#btn-change").addEventListener("click", backToLauncher);
+$("#btn-change-m").addEventListener("click", backToLauncher);
+$("#btn-shot-m").addEventListener("click", () => $("#btn-shot").click());
 $("#btn-link").addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(configURL());
@@ -1009,6 +1054,7 @@ $("#btn-shot").addEventListener("click", () => {
 });
 
 function enterPresent() {
+  closeSheet();
   app.classList.add("present");
   const el = document.documentElement;
   // iPhone Safari has no page fullscreen; "Add to Home Screen" gives the same

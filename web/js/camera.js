@@ -274,7 +274,7 @@ export class CameraFeed {
       };
     };
     c.addEventListener("pointerdown", (e) => {
-      if (!this.active) return;
+      if (this.kind !== "screen") return; // regions only for screen capture
       start = toNorm(e);
       if (!start) return;
       e.preventDefault();
